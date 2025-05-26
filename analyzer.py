@@ -24,7 +24,13 @@ class Analyzer(ast.NodeVisitor):
         self.generic_visit(node) #goes one layer deeper into the node just done analyzing
     def report(self):
         pprint(self.stats) #prints out the dictionary
-        
+
+class ClassDefInfo():
+    module: str
+    name: str
+    ancestors: list[str]
+    methods: list[str]
+
 def getName(base): #each base field could belong to a different class
     if isinstance(base, ast.Name): #check if current base field belongs to Name class in ast (refers to a top level class, the module itself, meaning it goes no deeper than that via attributes)—essentially checking if inherits from something without attributes
         return base.id #return name (stored as id) of class
