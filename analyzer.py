@@ -1,6 +1,9 @@
 import ast
 from pprint import pprint
 
+analyzedModule = set()
+analyzedClass = set()
+
 def main():
     firstFileName = input("Insert file: ") #just for when it first runs, asks the user for which file they want to analyze
     analyze(firstFileName) #calls the analyze function with said file as argument
@@ -15,17 +18,14 @@ class Analyzer(ast.NodeVisitor):
         for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
             baseName = getName(base)
             newClassDefInfo.ancestors.append(baseName) #gets name of the bases
-            newClassDefInfo.modules.append(baseName.split(".")[0] + ".py")
+            if "." in baseName or baseName != "object":
+                newClassDefInfo.modules.append(baseName.split(".")[0] + ".py")
         for method in node.body:
             newClassDefInfo.methods.append(method)
         print(newClassDefInfo)
-        ClassDefInfo.instanceNumber +=1
-    #def report(self):
-    #    pprint(self.stats) #prints out the dictionary
 
 class ClassDefInfo():
     instanceList = []
-    instanceNumber = 0
     
     def __init__(self):
         ClassDefInfo.instanceList.append(self)
@@ -33,6 +33,7 @@ class ClassDefInfo():
         self.name: str
         self.ancestors: list[str] = []
         self.methods: list[str] = []
+        
     def __repr__(self):
         return (
             f"ClassDefInfo(\n"
@@ -43,7 +44,6 @@ class ClassDefInfo():
             f")"
         )
 
-
 def getName(base): #each base field could belong to a different class
     if isinstance(base, ast.Name): #check if current base field belongs to Name class in ast (refers to a top level class, the module itself, meaning it goes no deeper than that via attributes)—essentially checking if inherits from something without attributes
         return base.id #return name (stored as id) of class
@@ -51,22 +51,17 @@ def getName(base): #each base field could belong to a different class
         return getName(base.value) + "." + base.attr #if so, get the class it comes from and itself, the attribute. when dealing with inheritance from attributes, the top level class name is stored in the attribute "id" of the "value" field/attribute
         
 def analyze(fileName):
+        if fileName in analyzedModule:
+            return
         with open(fileName, "r") as source: #opens the file passed in in readable mode; stores it as source variable
             tree = ast.parse(source.read()) #.read() turns the file's content into a string that the ast module can invoke the parse method on
         analyzer = Analyzer() #new instance of Analyzer()
         analyzer.visit(tree) #analyzer visits the tree; visit method looks for each node to then invoke visit_(NodeType) on it; if doesn't find visit_(NodeType) declared in the Analyzer class, it calls self.generic_visit(node), which goes into the next layer and repeats the process
-        repeats = 0
-        for classInstance in ClassDefInfo.instanceList:
-                if classInstance.modules:
-                    while (repeats < ClassDefInfo.instanceNumber):
-                        for element in classInstance.modules:
-                            analyze(element)
-                            repeats += 1        
-        """analyzer.report() #prints out the dictionary
+        analyzedModule.add(fileName)
         
-        #having finished completely analyzing the tree:
-        if analyzer.stats["Modules"]: #check if the Modules key has anything; if so:
-            for module in analyzer.stats["Modules"]:
-                analyze(module) #run each module inside the key into the analyze function, ensuring each imported module is analyzed"""
-
+        for classInstance in ClassDefInfo.instanceList:
+            if classInstance.name not in analyzedClass:
+                for element in classInstance.modules:
+                    analyze(element)
+                analyzedClass.add(classInstance.name)
 main()
