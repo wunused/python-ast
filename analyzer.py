@@ -8,22 +8,27 @@ def main():
 class Analyzer(ast.NodeVisitor):
     def __init__(self): #constructor
         pass
-    #we only want to check for classes, the classes they inherit from, functions, their imports, and do the same in the modules they import   
+    #we only want to check for classes, the classes they inherit from, functions, their imports, and do the same in the modules they import
     def visit_ClassDef(self, node):
         newClassDefInfo = ClassDefInfo()
         newClassDefInfo.name = node.name
         for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
             baseName = getName(base)
             newClassDefInfo.ancestors.append(baseName) #gets name of the bases
-            newClassDefInfo.modules.append(baseName.split(".")[1])
+            newClassDefInfo.modules.append(baseName.split(".")[0] + ".py")
         for method in node.body:
             newClassDefInfo.methods.append(method)
         print(newClassDefInfo)
+        ClassDefInfo.instanceNumber +=1
     #def report(self):
     #    pprint(self.stats) #prints out the dictionary
 
 class ClassDefInfo():
+    instanceList = []
+    instanceNumber = 0
+    
     def __init__(self):
+        ClassDefInfo.instanceList.append(self)
         self.modules: list[str] = []
         self.name: str
         self.ancestors: list[str] = []
@@ -32,7 +37,7 @@ class ClassDefInfo():
         return (
             f"ClassDefInfo(\n"
             f"  name='{self.name}',\n"
-            f"  methods={[m.name if hasattr(m, 'name') else m for m in self.methods]},\n"
+            f"  methods={[m.name for m in self.methods]},\n"
             f"  ancestors={self.ancestors},\n"
             f"  modules={self.modules}\n"
             f")"
@@ -48,9 +53,15 @@ def getName(base): #each base field could belong to a different class
 def analyze(fileName):
         with open(fileName, "r") as source: #opens the file passed in in readable mode; stores it as source variable
             tree = ast.parse(source.read()) #.read() turns the file's content into a string that the ast module can invoke the parse method on
-    
         analyzer = Analyzer() #new instance of Analyzer()
         analyzer.visit(tree) #analyzer visits the tree; visit method looks for each node to then invoke visit_(NodeType) on it; if doesn't find visit_(NodeType) declared in the Analyzer class, it calls self.generic_visit(node), which goes into the next layer and repeats the process
+        repeats = 0
+        for classInstance in ClassDefInfo.instanceList:
+                if classInstance.modules:
+                    while (repeats < ClassDefInfo.instanceNumber):
+                        for element in classInstance.modules:
+                            analyze(element)
+                            repeats += 1        
         """analyzer.report() #prints out the dictionary
         
         #having finished completely analyzing the tree:
