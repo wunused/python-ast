@@ -7,29 +7,37 @@ def main():
 
 class Analyzer(ast.NodeVisitor):
     def __init__(self): #constructor
-        self.stats = {"Classes": [], "Bases": [], "Functions": [], "Modules": []} #stats dictionary stores keys
-    
+        pass
     #we only want to check for classes, the classes they inherit from, functions, their imports, and do the same in the modules they import   
     def visit_ClassDef(self, node):
-        self.stats["Classes"].append(node.name)
+        newClassDefInfo = ClassDefInfo()
+        newClassDefInfo.name = node.name
         for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
-            self.stats["Bases"].append(getName(base)) #gets name of the bases
-        self.generic_visit(node) #goes one layer deeper into the node just done analyzing
-    def visit_FunctionDef(self, node):
-        self.stats["Functions"].append(node.name) #appends function name to Functions key
-        self.generic_visit(node) #goes one layer deeper into the node just done analyzing
-    def visit_Import(self, node):
-        for alias in node.names: #"alias" because for imported modules, we can do "import module as alias," giving it a new name
-            self.stats["Modules"].append(alias.name + ".py") #get the name attribute from the alias field to get the original name of the imported module and add .py to it to store it as an actual filename to be later used
-        self.generic_visit(node) #goes one layer deeper into the node just done analyzing
-    def report(self):
-        pprint(self.stats) #prints out the dictionary
+            baseName = getName(base)
+            newClassDefInfo.ancestors.append(baseName) #gets name of the bases
+            newClassDefInfo.modules.append(baseName.split(".")[1])
+        for method in node.body:
+            newClassDefInfo.methods.append(method)
+        print(newClassDefInfo)
+    #def report(self):
+    #    pprint(self.stats) #prints out the dictionary
 
 class ClassDefInfo():
-    module: str
-    name: str
-    ancestors: list[str]
-    methods: list[str]
+    def __init__(self):
+        self.modules: list[str] = []
+        self.name: str
+        self.ancestors: list[str] = []
+        self.methods: list[str] = []
+    def __repr__(self):
+        return (
+            f"ClassDefInfo(\n"
+            f"  name='{self.name}',\n"
+            f"  methods={[m.name if hasattr(m, 'name') else m for m in self.methods]},\n"
+            f"  ancestors={self.ancestors},\n"
+            f"  modules={self.modules}\n"
+            f")"
+        )
+
 
 def getName(base): #each base field could belong to a different class
     if isinstance(base, ast.Name): #check if current base field belongs to Name class in ast (refers to a top level class, the module itself, meaning it goes no deeper than that via attributes)—essentially checking if inherits from something without attributes
@@ -43,11 +51,11 @@ def analyze(fileName):
     
         analyzer = Analyzer() #new instance of Analyzer()
         analyzer.visit(tree) #analyzer visits the tree; visit method looks for each node to then invoke visit_(NodeType) on it; if doesn't find visit_(NodeType) declared in the Analyzer class, it calls self.generic_visit(node), which goes into the next layer and repeats the process
-        analyzer.report() #prints out the dictionary
+        """analyzer.report() #prints out the dictionary
         
         #having finished completely analyzing the tree:
         if analyzer.stats["Modules"]: #check if the Modules key has anything; if so:
             for module in analyzer.stats["Modules"]:
-                analyze(module) #run each module inside the key into the analyze function, ensuring each imported module is analyzed
+                analyze(module) #run each module inside the key into the analyze function, ensuring each imported module is analyzed"""
 
 main()
