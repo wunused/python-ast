@@ -1,12 +1,21 @@
 import ast
 from pprint import pprint
 
+instanceList: list[str] = []
 analyzedModule = set()
 analyzedClass = set()
 
 def main():
     firstFileName = input("Insert file: ") #just for when it first runs, asks the user for which file they want to analyze
     analyze(firstFileName) #calls the analyze function with said file as argument
+    
+    for instance in instanceList:
+        print(instance)
+        for ancestorEnd in instance.ancestorsEnd:
+            for instance2 in instanceList:
+                if ancestorEnd == instance2.name:
+                    instance.methods.extend(instance2.methods)
+                    print(instance)
 
 class Analyzer(ast.NodeVisitor):
     def __init__(self): #constructor
@@ -16,22 +25,24 @@ class Analyzer(ast.NodeVisitor):
         newClassDefInfo = ClassDefInfo()
         newClassDefInfo.name = node.name
         for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
-            baseName = getName(base)
-            newClassDefInfo.ancestors.append(baseName) #gets name of the bases
-            if "." in baseName or baseName != "object":
+            baseName = getName(base) #gets name of the bases
+            newClassDefInfo.fullAncestors.append(baseName)
+            if "." not in baseName and baseName != "object":
+                newClassDefInfo.modules.append(baseName)
+            elif baseName != "object":
                 newClassDefInfo.modules.append(baseName.split(".")[0] + ".py")
+                newClassDefInfo.ancestorsEnd.append(baseName.split(".")[1])
         for method in node.body:
             newClassDefInfo.methods.append(method)
-        print(newClassDefInfo)
 
 class ClassDefInfo():
-    instanceList = []
     
     def __init__(self):
-        ClassDefInfo.instanceList.append(self)
+        instanceList.append(self)
         self.modules: list[str] = []
         self.name: str
-        self.ancestors: list[str] = []
+        self.fullAncestors: list[str] = []
+        self.ancestorsEnd: list[str] = []
         self.methods: list[str] = []
         
     def __repr__(self):
@@ -39,8 +50,9 @@ class ClassDefInfo():
             f"ClassDefInfo(\n"
             f"  name='{self.name}',\n"
             f"  methods={[m.name for m in self.methods]},\n"
-            f"  ancestors={self.ancestors},\n"
+            f"  fullAncestors={self.fullAncestors},\n"
             f"  modules={self.modules}\n"
+            f"  ancestorsEnd={self.ancestorsEnd}\n"
             f")"
         )
 
@@ -51,7 +63,7 @@ def getName(base): #each base field could belong to a different class
         return getName(base.value) + "." + base.attr #if so, get the class it comes from and itself, the attribute. when dealing with inheritance from attributes, the top level class name is stored in the attribute "id" of the "value" field/attribute
         
 def analyze(fileName):
-        if fileName in analyzedModule:
+        if fileName in analyzedModule: #when re-checking the list of modules, we dont want it to reanalyze the first infinitely
             return
         with open(fileName, "r") as source: #opens the file passed in in readable mode; stores it as source variable
             tree = ast.parse(source.read()) #.read() turns the file's content into a string that the ast module can invoke the parse method on
@@ -59,9 +71,10 @@ def analyze(fileName):
         analyzer.visit(tree) #analyzer visits the tree; visit method looks for each node to then invoke visit_(NodeType) on it; if doesn't find visit_(NodeType) declared in the Analyzer class, it calls self.generic_visit(node), which goes into the next layer and repeats the process
         analyzedModule.add(fileName)
         
-        for classInstance in ClassDefInfo.instanceList:
-            if classInstance.name not in analyzedClass:
+        for classInstance in instanceList:
+            if classInstance.name not in analyzedClass: #when re-checking the classes to find the modules, though the modules will shave been safely added to the analyzedModule set to not go infinitely, this ensures it doesn't even have to recheck a class whose all modules have been analyzed, saving time
                 for element in classInstance.modules:
                     analyze(element)
                 analyzedClass.add(classInstance.name)
+        #if isinstance(fileName.split(".")[0]., ClassDefInfo):
 main()
