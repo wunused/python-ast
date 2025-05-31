@@ -6,4 +6,9 @@ class C(object):
 	def c_method2(self):
 		pass
 
-b = C()
+class D():
+    
+    def d_method1(self):
+        pass
+
+c = C()

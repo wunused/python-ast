@@ -76,5 +76,4 @@ def analyze(fileName):
                 for element in classInstance.moduleFileNames:
                     analyze(element)
                 analyzedClass.add(classInstance.name)
-        #if isinstance(fileName.split(".")[0]., ClassDefInfo):
 main()
