@@ -11,9 +11,9 @@ def main():
     
     for instance in instanceList:
         print(instance)
-        for ancestorEnd in instance.ancestorsEnd:
+        for inherited_class in instance.inherited_classes:
             for instance2 in instanceList:
-                if ancestorEnd == instance2.name:
+                if inherited_class == instance2.name:
                     instance.methods.extend(instance2.methods)
                     print(instance)
 
@@ -26,12 +26,12 @@ class Analyzer(ast.NodeVisitor):
         newClassDefInfo.name = node.name
         for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
             baseName = getName(base) #gets name of the bases
-            newClassDefInfo.fullAncestors.append(baseName)
+            newClassDefInfo.base_names.append(baseName)
             if "." not in baseName and baseName != "object":
-                newClassDefInfo.modules.append(baseName)
+                newClassDefInfo.moduleFileNames.append(baseName)
             elif baseName != "object":
-                newClassDefInfo.modules.append(baseName.split(".")[0] + ".py")
-                newClassDefInfo.ancestorsEnd.append(baseName.split(".")[1])
+                newClassDefInfo.moduleFileNames.append(baseName.split(".")[0] + ".py")
+                newClassDefInfo.inherited_classes.append(baseName.split(".")[1])
         for method in node.body:
             newClassDefInfo.methods.append(method)
 
@@ -39,10 +39,10 @@ class ClassDefInfo():
     
     def __init__(self):
         instanceList.append(self)
-        self.modules: list[str] = []
+        self.moduleFileNames: list[str] = []
         self.name: str
-        self.fullAncestors: list[str] = []
-        self.ancestorsEnd: list[str] = []
+        self.base_names: list[str] = []
+        self.inherited_classes: list[str] = []
         self.methods: list[str] = []
 
     def __repr__(self):
@@ -50,9 +50,9 @@ class ClassDefInfo():
             f"ClassDefInfo(\n"
             f"  name='{self.name}',\n"
             f"  methods={[m.name for m in self.methods]},\n"
-            f"  fullAncestors={self.fullAncestors},\n"
-            f"  modules={self.modules}\n"
-            f"  ancestorsEnd={self.ancestorsEnd}\n"
+            f"  base_names={self.base_names},\n"
+            f"  moduleFileNames={self.moduleFileNames}\n"
+            f"  inherited_classes={self.inherited_classes}\n"
             f")"
         )
 
@@ -73,7 +73,7 @@ def analyze(fileName):
         
         for classInstance in instanceList:
             if classInstance.name not in analyzedClass: #when re-checking the classes to find the modules, though the modules will shave been safely added to the analyzedModule set to not go infinitely, this ensures it doesn't even have to recheck a class whose all modules have been analyzed, saving time
-                for element in classInstance.modules:
+                for element in classInstance.moduleFileNames:
                     analyze(element)
                 analyzedClass.add(classInstance.name)
         #if isinstance(fileName.split(".")[0]., ClassDefInfo):
