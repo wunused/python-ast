@@ -1,9 +1,9 @@
-class B(object):
+class C(object):
 	
-	def b_method1(self):
+	def c_method1(self):
 		pass
 
-	def b_method2(self):
+	def c_method2(self):
 		pass
 
-b = B()
+b = C()

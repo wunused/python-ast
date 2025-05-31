@@ -44,7 +44,7 @@ class ClassDefInfo():
         self.fullAncestors: list[str] = []
         self.ancestorsEnd: list[str] = []
         self.methods: list[str] = []
-        
+
     def __repr__(self):
         return (
             f"ClassDefInfo(\n"
