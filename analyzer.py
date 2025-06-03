@@ -16,9 +16,23 @@ def main():
                     instance.methods.extend(instance2.methods)
                     print(instance)
 
+class importAnalyzer(ast.NodeVisitor):
+    def __init__(self, fileName):
+        self.upperModule = moduleInfo(fileName)
+        modules_dictionary[fileName] = self.upperModule
+
+    def visit_Import(self, node):
+        importInfoBuilder(self, node)
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node):
+        importInfoBuilder(self, node)
+        self.generic_visit(node)
+
 class Analyzer(ast.NodeVisitor):
     def __init__(self, fileName):
         self.upperModule = moduleInfo(fileName)
+        modules_dictionary[fileName] = self.upperModule
     def visit_ClassDef(self, node):
         newClassDefInfo = ClassDefInfo(node.name, self.upperModule.imports)
         for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
@@ -32,14 +46,6 @@ class Analyzer(ast.NodeVisitor):
         for method in node.body:
             newClassDefInfo.methods.append(method)
 
-    def visit_Import(self, node):
-        importInfoBuilder(self, node)
-        self.generic_visit(node)
-
-    def visit_ImportFrom(self, node):
-        importInfoBuilder(self, node)
-        self.generic_visit(node)
-
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
             upperImportInfo = importInfo(
@@ -51,7 +57,7 @@ def importInfoBuilder(analyzer, node):
 
 # Dictionary for Lookup:
 
-master_dictionary = {"modules": []}
+modules_dictionary = {} # create a new key for every moduleInfo() with key being .name
 
 # CLASSES FOR NODE TYPES:
 
@@ -76,10 +82,10 @@ class importInfo():
 # Class Node:
 
 class ClassDefInfo():
-    def __init__(self, name, importInfoList):
+    def __init__(self, name: str, importInfoList: list[importInfo]):
         for i in importInfoList:
-            if i.module.name + i.asname == self.inherited_classes_fullNames or i.asname == self.inherited_classes_fullNames:
-                self.inherited_classes_fullNames = i.module.name + i.name
+            if i.module.name + "." + i.asname == self.inherited_classes_fullNames or i.asname == self.inherited_classes_fullNames:
+                self.inherited_classes_fullNames = i.module.name + "." + i.name
         instanceList.append(self)
         self.name: str = name
         self.inherited_classes_fullNames: list[str] = []
@@ -133,6 +139,6 @@ def analyze(fileName):
         for classInstance in instanceList:
             if classInstance.name not in analyzedClass: 
                 for element in classInstance.moduleFileNames:
-                    analyze(element)
+                    analyze(element + ".py")
                 analyzedClass.add(classInstance.name)
 main()
