@@ -7,8 +7,6 @@ def main ():
     masterAnalyzer(moduleName)
     
     # look-up below
-    
-    
 
 def masterAnalyzer(moduleName):
     if moduleName in global_dictionary["modules_dictionary"]:
@@ -17,9 +15,6 @@ def masterAnalyzer(moduleName):
         tree = ast.parse(source.read())
     importAnalyzer = ImportAnalyzer(moduleName)
     importAnalyzer.visit(tree)
-    
-    """for module in importAnalyzer.upperModule.imports.values():
-        masterAnalyzer(module.name)"""
 
 class ImportAnalyzer(ast.NodeVisitor):
     def __init__(self, moduleName):
@@ -43,7 +38,7 @@ class moduleInfo():
         self.imports: dict[importInfo] = {} # use dictionaries to look up by name
         self.classes: dict = {}
         self.methods: dict = {}
-        
+
 def classInfoBuilder(analyzer, node):
     analyzer.upperModule.classes[node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
@@ -78,9 +73,7 @@ def getFullName(base):
     Only possible exception is when a class inherits from a class 
     defined in the same module
     """
-    
-    
-    
+
 class ClassInfo():
     def __init__(self, name):
         self.name = name
@@ -119,3 +112,5 @@ class importInfo():
             self.type = "Module"
             masterAnalyzer(name)
             self.module: moduleInfo = global_dictionary["modules_dictionary"][name]
+
+main()
