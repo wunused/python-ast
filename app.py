@@ -1,5 +1,5 @@
 import lib
-from newapp import pinho
+from newApp import pinho
 
 class A(lib.C):
     

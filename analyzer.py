@@ -1,6 +1,7 @@
 import ast
 
-global_dictionary = {"modules_dictionary": {}, "classes_dictionary": {}}
+global_dictionary = {"modules_dictionary": {}, 
+                    "classes_dictionary": {}}
 
 def main ():
     moduleName = input("Insert file name: ").split(".")[0]
@@ -42,16 +43,33 @@ class moduleInfo():
 def classInfoBuilder(analyzer, node):
     analyzer.upperModule.classes[node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
-        fullName = getFullName(base)
+        fullName = asname_to_name(analyzer, getFullName(base))
+        
+        # if fullName is an asname, there needs to be some way to switch into its real name
+
+        
         if "." not in fullName:
             fullName = analyzer.upperModule.imports[fullName].module.name + "." + fullName
+        classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
         """if fullName doesn't have a dot, look in 
         the imports of that module for where there 
         is an import with it as the name and then 
         get the module and attach it"""
-        
-        classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
+
+def asname_to_name(analyzer, formerName):
+    for key in analyzer.upperModule.imports.values():
+        if formerName == key.asname:
+            return key.name
+        else:
+            return formerName
+    # look at the module
     
+    # look at the imports
+    
+    # look at each asname
+    
+    # if an asname equals formerName, return the name
+
     # construct full name; then, find it and link it to inherited_classes
 def getFullName(base):
     
