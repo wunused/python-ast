@@ -5,7 +5,7 @@ class A(lib.C):
     
 	def a_method(self):
 		pass
-"""class B(pinho):
+class B(pinho):
     def b_method(self):
-        pass"""
+        pass
 a = A()

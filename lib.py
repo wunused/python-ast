@@ -1,4 +1,4 @@
-class C(object):
+class C():
 	
 	def c_method1(self):
 		pass
