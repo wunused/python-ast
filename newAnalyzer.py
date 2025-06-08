@@ -45,13 +45,28 @@ class moduleInfo():
         self.methods: dict = {}
         
 def classInfoBuilder(analyzer, node):
-    analyzer.upperModule.classes[node.name] = ClassInfo(analyzer.upperModule.name + "." + node.name)
+    analyzer.upperModule.classes[node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
-        baseName = getName(base) #gets name of the bases
-    inherited_classes 
+        fullName = getFullName(base)
+        if "." not in fullName:
+            fullName = analyzer.upperModule.imports[fullName].module.name + "." + fullName
+        """if fullName doesn't have a dot, look in 
+        the imports of that module for where there 
+        is an import with it as the name and then 
+        get the module and attach it"""
+        
+        classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
     
+    # construct full name; then, find it and link it to inherited_classes
+def getFullName(base):
     
-    """if we agree that it starts at the very last possible 
+    if isinstance(base, ast.Name):
+        return base.id
+    if isinstance(base, ast.Attribute): 
+        return getFullName(base.value) + "." + base.attr
+    
+    """
+    if we agree that it starts at the very last possible 
     module without an import, meaning the following non-import 
     parts of the modules will always inherit from an analyzed class, 
     every base found will have already been analyzed.
@@ -59,6 +74,9 @@ def classInfoBuilder(analyzer, node):
     That means we need to find a way to search for the existing class
     through the base and add them to a key in an inherited_classes 
     dictionary
+    
+    Only possible exception is when a class inherits from a class 
+    defined in the same module
     """
     
     
