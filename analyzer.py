@@ -3,7 +3,14 @@ import ast
 instanceList: list[str] = []
 analyzedModule = set()
 analyzedClass = set()
-
+"""
+def main ():
+    moduleName = input("Insert Module name: ")
+    masterAnalyzer(moduleName)
+    
+    def masterAnalyzer(moduleName):
+        if moduleName in modules_dictionary
+"""
 def main():
     firstFileName = input("Insert file: ") 
     analyze(firstFileName)
@@ -15,8 +22,10 @@ def main():
                 if inherited_class == instance2.name:
                     instance.methods.extend(instance2.methods)
                     print(instance)
+                    
+# Creates a moduleInfo object and visits all import statements
 
-class importAnalyzer(ast.NodeVisitor):
+class ImportAnalyzer(ast.NodeVisitor):
     def __init__(self, fileName):
         self.upperModule = moduleInfo(fileName)
         modules_dictionary[fileName] = self.upperModule
@@ -52,8 +61,13 @@ def importInfoBuilder(analyzer, node):
                 alias.name, 
                 getattr(alias, "asname", None), 
                 getattr(node, "module", None))
-
             analyzer.upperModule.imports.append(upperImportInfo)
+            
+# Stack for successive module import analysis:
+
+stack = []
+
+# something something, add to stack, go on to next import nodes
 
 # Dictionary for Lookup:
 
@@ -126,14 +140,17 @@ def getName(base):
     if isinstance(base, ast.Attribute): 
         return getName(base.value) + "." + base.attr 
         
+        
 def analyze(fileName):
         if fileName in analyzedModule: 
             return
         
         with open(fileName, "r") as source: 
-            tree = ast.parse(source.read()) 
+            tree = ast.parse(source.read())
+        importAnalyzer = ImportAnalyzer(fileName)
+        importAnalyzer.visit(tree)
         analyzer = Analyzer(fileName)
-        analyzer.visit(tree) 
+        analyzer.visit(tree)
         analyzedModule.add(fileName)
         
         for classInstance in instanceList:
