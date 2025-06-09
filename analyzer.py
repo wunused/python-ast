@@ -7,6 +7,7 @@ def main ():
     moduleName = input("Insert file name: ").split(".")[0]
     masterAnalyzer(moduleName)
     
+    print(global_dictionary)
     # look-up below
 
 def masterAnalyzer(moduleName):
@@ -41,12 +42,12 @@ class moduleInfo():
         self.methods: dict = {}
 
 def classInfoBuilder(analyzer, node):
-    analyzer.upperModule.classes[node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
+    analyzer.upperModule.classes[analyzer.upperModule.name + "." + node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
+    global_dictionary["classes_dictionary"][classInstance.name] = classInstance
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
         fullName = asname_to_name(analyzer, getFullName(base))
         
         # if fullName is an asname, there needs to be some way to switch into its real name
-
         
         if "." not in fullName:
             fullName = analyzer.upperModule.imports[fullName].module.name + "." + fullName
@@ -62,15 +63,7 @@ def asname_to_name(analyzer, formerName):
             return key.name
         else:
             return formerName
-    # look at the module
-    
-    # look at the imports
-    
-    # look at each asname
-    
-    # if an asname equals formerName, return the name
 
-    # construct full name; then, find it and link it to inherited_classes
 def getFullName(base):
     
     if isinstance(base, ast.Name):
@@ -99,7 +92,7 @@ class ClassInfo():
         
         # some checker for bases comparing to the module.Name 
 
-    def __repr__(self):
+    """def __repr__(self):
         return (
             f"ClassDefInfo(\n"
             f"  name='{self.name}',\n"
@@ -108,7 +101,7 @@ class ClassInfo():
             f"  moduleFileNames={self.moduleFileNames}\n"
             f"  inherited_classes={self.inherited_classes}\n"
             f")"
-        )
+        )"""
 
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
