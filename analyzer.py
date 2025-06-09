@@ -1,11 +1,13 @@
 import ast
 
 global_dictionary = {"modules_dictionary": {}, 
-                    "classes_dictionary": {}}
+                    "classes_dictionary": {},
+                    "functions_dictionary": {}}
 
 def main ():
     moduleName = input("Insert file name: ").split(".")[0]
     masterAnalyzer(moduleName)
+    
     
     print(global_dictionary)
     # look-up below
@@ -15,12 +17,12 @@ def masterAnalyzer(moduleName):
         return
     with open(moduleName + ".py", "r") as source: 
         tree = ast.parse(source.read())
-    importAnalyzer = ImportAnalyzer(moduleName)
-    importAnalyzer.visit(tree)
+    subAnalyzer = subAnalyzer(moduleName)
+    subAnalyzer.visit(tree)
 
-class ImportAnalyzer(ast.NodeVisitor):
+class subAnalyzer(ast.NodeVisitor):
     def __init__(self, moduleName):
-        global_dictionary["modules_dictionary"][moduleName] = self.upperModule = moduleInfo(moduleName)
+        self.highestLevel = global_dictionary["modules_dictionary"][moduleName] = self.upperModule = moduleInfo(moduleName)
 
     def visit_Import(self, node):
         importInfoBuilder(self, node)
@@ -31,15 +33,26 @@ class ImportAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ClassDef(self, node):
-        classInfoBuilder(self, node)
+        self.previousLevel = self.highestLevel
+        self.highestLevel = classInfoBuilder(self, node)
+        self.generic_visit(node)
+        self.highestLevel = self.previousLevel
+    
+    """Make it so that it can store the FunctionInfo() 
+    object into the class it's in"""
+    
+    def visit_FunctionDef(self, node):
+        functionInfoBuilder(self, node)
         self.generic_visit(node)
 
+        
+    
 class moduleInfo():
     def __init__(self, name):
         self.name: str = name
         self.imports: dict[importInfo] = {} # use dictionaries to look up by name
         self.classes: dict = {}
-        self.methods: dict = {}
+        self.functions: dict = {}
         
     def __repr__(self):
         return (
@@ -47,6 +60,18 @@ class moduleInfo():
             f"Module Imports = {self.imports}\n"
             f"Module Classes = {self.classes}\n"
         )
+
+def functionInfoBuilder(analyzer, node):
+    analyzer.currentClass.functions[node.name] = functionInstance = FunctionInfo(node.name)
+    global_dictionary["functions_dictionary"][functionInstance] = functionInstance
+    # linking won't be a problem because we can still use analyzer.upperModule.classes[]
+    
+    # Find a way to separate from innate methods and inherited ones
+class FunctionInfo():
+    def __init__(self, name):
+        self.name = name
+        self.parentType =
+        self.parent =
 
 def classInfoBuilder(analyzer, node):
     
@@ -62,10 +87,11 @@ def classInfoBuilder(analyzer, node):
         if "." not in fullName:
             fullName = analyzer.upperModule.imports[fullName].module.name + "." + fullName
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
-        """if fullName doesn't have a dot, look in 
-        the imports of that module for where there 
-        is an import with it as the name and then 
-        get the module and attach it"""
+    return classInstance
+    """if fullName doesn't have a dot, look in 
+    the imports of that module for where there 
+    is an import with it as the name and then 
+    get the module and attach it"""
 
 def asname_to_name(analyzer, formerName):
     for key in analyzer.upperModule.imports.values():
@@ -99,6 +125,7 @@ class ClassInfo():
     def __init__(self, name):
         self.name = name
         self.inherited_classes: dict[ClassInfo] = {}
+        self.functions: dict[FunctionInfo] = {}
         
         # some checker for bases comparing to the module.Name 
 
