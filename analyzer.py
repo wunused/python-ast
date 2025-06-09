@@ -22,7 +22,7 @@ def masterAnalyzer(moduleName):
 
 class subAnalyzer(ast.NodeVisitor):
     def __init__(self, moduleName):
-        self.highestLevel = global_dictionary["modules_dictionary"][moduleName] = self.upperModule = moduleInfo(moduleName)
+        self.highestLevel = global_dictionary["modules_dictionary"][moduleName] = moduleInfo(moduleName)
 
     def visit_Import(self, node):
         importInfoBuilder(self, node)
@@ -64,7 +64,7 @@ class moduleInfo():
 def functionInfoBuilder(analyzer, node):
     analyzer.currentClass.functions[node.name] = functionInstance = FunctionInfo(node.name)
     global_dictionary["functions_dictionary"][functionInstance] = functionInstance
-    # linking won't be a problem because we can still use analyzer.upperModule.classes[]
+    # linking won't be a problem because we can still use analyzer.highestLevel.classes[]
     
     # Find a way to separate from innate methods and inherited ones
 class FunctionInfo():
@@ -77,7 +77,7 @@ def classInfoBuilder(analyzer, node):
     
     # MISSING: Create a case for when it inherits from class within same module
     
-    analyzer.upperModule.classes[analyzer.upperModule.name + "." + node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
+    analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
     global_dictionary["classes_dictionary"][classInstance.name] = classInstance
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
         fullName = asname_to_name(analyzer, getFullName(base))
@@ -85,7 +85,7 @@ def classInfoBuilder(analyzer, node):
         # if fullName is an asname, there needs to be some way to switch into its real name
         
         if "." not in fullName:
-            fullName = analyzer.upperModule.imports[fullName].module.name + "." + fullName
+            fullName = analyzer.highestLevel.imports[fullName].module.name + "." + fullName
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
     return classInstance
     """if fullName doesn't have a dot, look in 
@@ -94,7 +94,7 @@ def classInfoBuilder(analyzer, node):
     get the module and attach it"""
 
 def asname_to_name(analyzer, formerName):
-    for key in analyzer.upperModule.imports.values():
+    for key in analyzer.highestLevel.imports.values():
         if formerName == key.asname:
             return key.name
         else:
@@ -141,7 +141,7 @@ def importInfoBuilder(analyzer, node):
                 alias.name, 
                 getattr(alias, "asname", None), 
                 getattr(node, "module", None))
-            analyzer.upperModule.imports[upperImportInfo.name] = upperImportInfo
+            analyzer.highestLevel.imports[upperImportInfo.name] = upperImportInfo
 
 class importInfo():
     def __init__(self, name, asname, module):
