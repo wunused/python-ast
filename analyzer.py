@@ -80,10 +80,23 @@ def classInfoBuilder(analyzer, node):
     
     analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
     global_dictionary["classes_dictionary"][classInstance.name] = classInstance
+    
+    # there should be 2 possibilities here: 1 - inherited class is from another module
+    """# 2 - inherited class is from same module. because classes cant inherit from 
+    classes defined after them in the same module, the inherited class has always 
+    already been analyzed"""
+    
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
         fullName = asname_to_name(analyzer, getFullName(base))
         if "." not in fullName:
-            fullName = analyzer.highestLevel.imports[fullName].module.name + "." + fullName
+            if fullName in analyzer.highestLevel.imports:
+                fullName = analyzer.highestLevel.imports[fullName].module.name + "." + fullName
+            else:
+                fullName = analyzer.highestLevel.classes[analyzer.highestLevel.name
+                                                        + "." 
+                                                        + fullName].name
+        # find a way to be able to tell whether or not this comes from the same module or different one
+        
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
         classInstance.inherited_functions[f"Inherited from: {fullName}"] = classInstance.inherited_classes[fullName].functions
     return classInstance

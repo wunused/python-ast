@@ -8,4 +8,6 @@ class A(lib.C):
 class B(pinho):
     def b_method(self):
         pass
+class new(B):
+    pass
 a = A()
