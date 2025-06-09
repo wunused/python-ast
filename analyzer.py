@@ -40,8 +40,18 @@ class moduleInfo():
         self.imports: dict[importInfo] = {} # use dictionaries to look up by name
         self.classes: dict = {}
         self.methods: dict = {}
+        
+    def __repr__(self):
+        return (
+            f"Module Name = {self.name}\n"
+            f"Module Imports = {self.imports}\n"
+            f"Module Classes = {self.classes}\n"
+        )
 
 def classInfoBuilder(analyzer, node):
+    
+    # MISSING: Create a case for when it inherits from class within same module
+    
     analyzer.upperModule.classes[analyzer.upperModule.name + "." + node.name] = classInstance = ClassInfo(analyzer.upperModule.name + "." + node.name)
     global_dictionary["classes_dictionary"][classInstance.name] = classInstance
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
@@ -92,16 +102,11 @@ class ClassInfo():
         
         # some checker for bases comparing to the module.Name 
 
-    """def __repr__(self):
+    def __repr__(self):
         return (
-            f"ClassDefInfo(\n"
-            f"  name='{self.name}',\n"
-            f"  methods={[m.name for m in self.methods]},\n"
-            f"  base_names={self.base_names},\n"
-            f"  moduleFileNames={self.moduleFileNames}\n"
-            f"  inherited_classes={self.inherited_classes}\n"
-            f")"
-        )"""
+            f"Class Name = {self.name}\n"
+            f"Inherited Classes = {self.inherited_classes}\n"
+        )
 
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
@@ -124,4 +129,11 @@ class importInfo():
             masterAnalyzer(name)
             self.module: moduleInfo = global_dictionary["modules_dictionary"][name]
 
+    def __repr__(self):
+        return (
+            f"Import Type = {self.type}\n"
+            f"Real Name = {self.name}\n"
+            f"User-generated Name = {self.asname}\n"
+            f"Module Name = {self.module.name}\n"
+        )
 main()
