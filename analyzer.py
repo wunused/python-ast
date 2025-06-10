@@ -1,21 +1,36 @@
+import argparse
 import ast
 
-global_dictionary = {"modules_dictionary": {}, 
+global_dictionary = {"modules_dictionary": {},
                     "classes_dictionary": {},
                     "functions_dictionary": {}}
 
+
 def main ():
+    # TODO: Change the user interface to take the analysis filename as a
+    # command line argument, and the class to analyze.
+    # Use the argparse library to register the command line arguments.
+    #
+    # For example:
+    # python3 analyzer.py app.py "app.A"
     moduleName = input("Insert file name: ").split(".")[0]
     masterAnalyzer(moduleName)
-    
-    
+
+    # TODO: Print out the analyzed class's inheritance information.
+    #
+    # Example:
+    # python3 analyzer.py app.py "app.A"
+    # app.A
+    # inherited classes: lib.C
+    # methods: a_method, lib.C.c_method1, lib.C.c_method2
+
     print(global_dictionary)
     # look-up below
 
 def masterAnalyzer(moduleName):
     if moduleName in global_dictionary["modules_dictionary"]:
         return
-    with open(moduleName + ".py", "r") as source: 
+    with open(moduleName + ".py", "r") as source:
         tree = ast.parse(source.read())
     subAnalyzerInstance = subAnalyzer(moduleName)
     subAnalyzerInstance.visit(tree)
@@ -37,22 +52,22 @@ class subAnalyzer(ast.NodeVisitor):
         self.highestLevel = classInfoBuilder(self, node)
         self.generic_visit(node)
         self.highestLevel = self.previousLevel
-    
-    """Make it so that it can store the FunctionInfo() 
+
+    """Make it so that it can store the FunctionInfo()
     object into the class it's in"""
-    
+
     def visit_FunctionDef(self, node):
         functionInfoBuilder(self, node)
         self.generic_visit(node)
 
-    
+
 class moduleInfo():
     def __init__(self, name):
         self.name: str = name
         self.imports: dict[importInfo] = {} # use dictionaries to look up by name
         self.classes: dict = {}
         self.functions: dict = {}
-        
+
     def __repr__(self):
         return (
             f"Module Name = {self.name}\n"
@@ -63,7 +78,7 @@ class moduleInfo():
 def functionInfoBuilder(analyzer, node):
     analyzer.highestLevel.functions[node.name] = functionInstance = FunctionInfo(node.name, analyzer.highestLevel)
     global_dictionary["functions_dictionary"][functionInstance] = functionInstance
-    
+
     # Find a way to separate from innate methods and inherited ones
 class FunctionInfo():
     def __init__(self, name, parent):
@@ -75,17 +90,17 @@ class FunctionInfo():
         self.parent = parent # we're going to need this to later check if a function is inherited or not
 
 def classInfoBuilder(analyzer, node):
-    
+
     # MISSING: Create a case for when it inherits from class within same module
-    
+
     analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
     global_dictionary["classes_dictionary"][classInstance.name] = classInstance
-    
+
     # there should be 2 possibilities here: 1 - inherited class is from another module
-    """# 2 - inherited class is from same module. because classes cant inherit from 
-    classes defined after them in the same module, the inherited class has always 
+    """# 2 - inherited class is from same module. because classes cant inherit from
+    classes defined after them in the same module, the inherited class has always
     already been analyzed"""
-    
+
     for base in node.bases: #bases refer to classes they inherit from; could be multiple, which is why it is a for loop
         fullName = asname_to_name(analyzer, getFullName(base))
         if "." not in fullName:
@@ -93,19 +108,19 @@ def classInfoBuilder(analyzer, node):
                 fullName = analyzer.highestLevel.imports[fullName].module.name + "." + fullName
             else:
                 fullName = analyzer.highestLevel.classes[analyzer.highestLevel.name
-                                                        + "." 
+                                                        + "."
                                                         + fullName].name
         # find a way to be able to tell whether or not this comes from the same module or different one
-        
+
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
         classInstance.inherited_functions[f"Inherited from: {fullName}"] = classInstance.inherited_classes[fullName].functions
     return classInstance
 
     """
     by the rule of classes, if every inherited
-    class has already been analyzed, then all 
+    class has already been analyzed, then all
     their functions have also been analyzed.
-        
+
     Therefore, whenever we analyze any class, we
     can immediately attach inherited functions into
     an inherited_functions attribute
@@ -121,20 +136,20 @@ def asname_to_name(analyzer, formerName):
 def getFullName(base):
     if isinstance(base, ast.Name):
         return base.id
-    if isinstance(base, ast.Attribute): 
+    if isinstance(base, ast.Attribute):
         return getFullName(base.value) + "." + base.attr
-    
+
     """
-    if we agree that it starts at the very last possible 
-    module without an import, meaning the following non-import 
-    parts of the modules will always inherit from an analyzed class, 
+    if we agree that it starts at the very last possible
+    module without an import, meaning the following non-import
+    parts of the modules will always inherit from an analyzed class,
     every base found will have already been analyzed.
-    
+
     That means we need to find a way to search for the existing class
-    through the base and add them to a key in an inherited_classes 
+    through the base and add them to a key in an inherited_classes
     dictionary
-    
-    Only possible exception is when a class inherits from a class 
+
+    Only possible exception is when a class inherits from a class
     defined in the same module
     """
 
@@ -154,8 +169,8 @@ class ClassInfo():
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
         upperImportInfo = importInfo(
-            alias.name, 
-            getattr(alias, "asname", None), 
+            alias.name,
+            getattr(alias, "asname", None),
             getattr(node, "module", None))
         analyzer.highestLevel.imports[upperImportInfo.name] = upperImportInfo
 
