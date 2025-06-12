@@ -1,5 +1,5 @@
-import argparse
 import ast
+import cli
 
 global_dictionary = {"modules_dictionary": {},
                     "classes_dictionary": {},
@@ -13,7 +13,9 @@ def main ():
     #
     # For example:
     # python3 analyzer.py app.py "app.A"
-    moduleName = input("Insert file name: ").split(".")[0]
+    
+    moduleName = cli.args.file.rsplit("/")[-1].split(".")[0]
+    #moduleName = input("Insert file name: ").split(".")[0]
     masterAnalyzer(moduleName)
 
     # TODO: Print out the analyzed class's inheritance information.
@@ -23,14 +25,12 @@ def main ():
     # app.A
     # inherited classes: lib.C
     # methods: a_method, lib.C.c_method1, lib.C.c_method2
-
-    print(global_dictionary)
     # look-up below
 
 def masterAnalyzer(moduleName):
     if moduleName in global_dictionary["modules_dictionary"]:
         return
-    with open(moduleName + ".py", "r") as source:
+    with open(topPath + "/" + moduleName + ".py", "r") as source:
         tree = ast.parse(source.read())
     subAnalyzerInstance = subAnalyzer(moduleName)
     subAnalyzerInstance.visit(tree)
@@ -194,4 +194,7 @@ class importInfo():
             f"User-generated Name = {self.asname}\n"
             f"Module Name = {self.module.name}\n"
         )
+
+cli.args
+topPath = cli.args.file.rsplit("/", 1)[0]
 main()
