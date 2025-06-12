@@ -1,41 +1,47 @@
 import ast
 import cli
 import cliLogic
+from pathlib import Path
 
 global_dictionary = {"modules_dictionary": {},
                     "classes_dictionary": {},
                     "functions_dictionary": {}}
 
-
-def main ():
+def main():
     # TODO: Change the user interface to take the analysis filename as a
     # command line argument, and the class to analyze.
     # Use the argparse library to register the command line arguments.
     #
     # For example:
     # python3 analyzer.py app.py "app.A"
-    
-    moduleName = args.file_name.rsplit("/", 1)[-1].split(".")[0]
+
+    args = cli.parse_args()
+    if not args.file_name.exists():
+        raise RuntimeError(f'file {args.file_name} does not exist')
+
+    module_directory = args.file_name.parent
+    module_name = args.file_name.stem
+
+    #moduleName = args.file_name.rsplit("/", 1)[-1].split(".")[0]
     #moduleName = input("Insert file name: ").split(".")[0]
-    masterAnalyzer(moduleName)
-    
+    masterAnalyzer(module_name, module_directory)
+
     cli.logic()
 
     # TODO: Print out the analyzed class's inheritance information.
     #
     # Example:
     # python3 analyzer.py app.py "app.A"
-    # app.A
     # inherited classes: lib.C
     # methods: a_method, lib.C.c_method1, lib.C.c_method2
-    # look-up below
 
-def masterAnalyzer(moduleName):
-    if moduleName in global_dictionary["modules_dictionary"]:
+def masterAnalyzer(module_name: str, root_directory: Path):
+
+    if module_name in global_dictionary["modules_dictionary"]:
         return
-    with open(topPath + "/" + moduleName + ".py", "r") as source:
+    with open(root_directory / Path(f"{module_name}.py"), "r") as source:
         tree = ast.parse(source.read())
-    subAnalyzerInstance = subAnalyzer(moduleName)
+    subAnalyzerInstance = subAnalyzer(module_name, root_directory)
     subAnalyzerInstance.visit(tree)
 
 class subAnalyzer(ast.NodeVisitor):
@@ -91,7 +97,7 @@ def classInfoBuilder(analyzer, node):
     analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
     global_dictionary["classes_dictionary"][classInstance.name] = classInstance
 
-    for base in node.bases: 
+    for base in node.bases:
         fullName = asname_to_name(analyzer, getFullName(base))
         if "." not in fullName:
             if fullName in analyzer.highestLevel.imports:
@@ -177,6 +183,5 @@ class importInfo():
                     f"Import Type = {self.type}\n"
                 )
 
-args = cli.parser.parse_args()
-topPath = args.file_name.rsplit("/", 1)[0]
-main()
+if __name__ == '__main__':
+    main()
