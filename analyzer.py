@@ -151,7 +151,7 @@ class importInfo():
 
     def __repr__(self):
         if self.asname is not None:
-            if self.type == "object":
+            if self.type == "Object":
                 return (
                     f"\nReal Name = {self.name}\n"
                     f"User-generated Name = {self.asname}\n"
@@ -165,7 +165,7 @@ class importInfo():
                     f"Import Type = {self.type}\n"
                 )
         else:
-            if self.type == "object":
+            if self.type == "Object":
                 return (
                     f"\nName = {self.name}\n"
                     f"Import Type = {self.type}\n"
