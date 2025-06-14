@@ -106,54 +106,6 @@ def importInfoBuilder(analyzer, node):
             getattr(node, "module", None), analyzer.parentPath)
         analyzer.highestLevel.imports[upperImportInfo.name] = upperImportInfo
 
-class moduleInfo():
-    def __init__(self, name):
-        self.name: str = name
-        self.imports: dict[importInfo] = {} # use dictionaries to look up by name
-        self.classes: dict = {}
-        self.functions: dict = {}
-
-    def __repr__(self):
-        return (
-            f"Module Name = {self.name}\n"
-            f"Module Imports =\n{self.imports}\n"
-            f"Module Classes =\n{self.classes}\n"
-            f"Module Functions =\n{self.functions}\n"
-        )
-
-class FunctionInfo():
-    def __init__(self, name, parent):
-        self.name = name
-        self.arguments = []
-        if isinstance(parent, ClassInfo):
-            self.parentType = "Class"
-        else:
-            self.parentType = "Module"
-        self.parent = parent
-
-    def __repr__(self):
-        return(
-            f"Name = {self.name}"
-        )
-
-class ClassInfo():
-    def __init__(self, name):
-        self.name = name
-        self.inherited_classes: dict[ClassInfo] = {}
-        self.functions: dict[FunctionInfo] = {}
-        self.inherited_functions: dict[FunctionInfo] = {}
-        self.printableClassList = []
-
-    def __repr__(self):
-        for inherited_class in self.inherited_classes.values():
-            self.printableClassList.append(inherited_class.name)
-        return (
-            f"\nClass Name = {self.name}"
-            f"\nFunctions = {self.functions}"
-            f"\nInherited Classes = {self.printableClassList}"
-            f"\nInherited Functions = {self.inherited_functions}\n"
-        )
-
 class importInfo():
     def __init__(self, name, asname, module, parentPath):
         self.name = name
@@ -194,6 +146,54 @@ class importInfo():
                     f"\nName = {self.name}\n"
                     f"Import Type = {self.type}\n"
                 )
+
+class moduleInfo():
+    def __init__(self, name):
+        self.name: str = name
+        self.imports: dict[importInfo] = {} # use dictionaries to look up by name
+        self.classes: dict = {}
+        self.functions: dict = {}
+
+    def __repr__(self):
+        return (
+            f"Module Name = {self.name}\n"
+            f"Module Imports =\n{self.imports}\n"
+            f"Module Classes =\n{self.classes}\n"
+            f"Module Functions =\n{self.functions}\n"
+        )
+
+class ClassInfo():
+    def __init__(self, name):
+        self.name = name
+        self.inherited_classes: dict[ClassInfo] = {}
+        self.functions: dict[FunctionInfo] = {}
+        self.inherited_functions: dict[FunctionInfo] = {}
+        self.printableClassList = []
+
+    def __repr__(self):
+        for inherited_class in self.inherited_classes.values():
+            self.printableClassList.append(inherited_class.name)
+        return (
+            f"\nClass Name = {self.name}"
+            f"\nFunctions = {self.functions}"
+            f"\nInherited Classes = {self.printableClassList}"
+            f"\nInherited Functions = {self.inherited_functions}\n"
+        )
+
+class FunctionInfo():
+    def __init__(self, name, parent):
+        self.name = name
+        self.arguments = []
+        if isinstance(parent, ClassInfo):
+            self.parentType = "Class"
+        else:
+            self.parentType = "Module"
+        self.parent = parent
+
+    def __repr__(self):
+        return(
+            f"Name = {self.name}"
+        )
 
 if __name__ == '__main__':
     main()
