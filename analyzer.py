@@ -1,11 +1,9 @@
 import ast
 import cli
-import cliLogic
-
-global_dictionary = {"modules_dictionary": {},
-                    "classes_dictionary": {},
-                    "functions_dictionary": {}}
-
+from cli import args
+from cli import global_dictionary
+from cli import filePath
+from pathlib import Path
 
 def main ():
     # TODO: Change the user interface to take the analysis filename as a
@@ -15,11 +13,15 @@ def main ():
     # For example:
     # python3 analyzer.py app.py "app.A"
     
-    moduleName = args.file_name.rsplit("/", 1)[-1].split(".")[0]
-    #moduleName = input("Insert file name: ").split(".")[0]
-    masterAnalyzer(moduleName)
+    # because we want to analyze any form of a file anywhere, it needs to be able to take either a relative path or an absolute path
+    # we assume all other lined modules will have the same parent as first module
     
-    cli.logic()
+    args
+    parentPath = filePath.parent
+    moduleName = filePath.stem
+    masterAnalyzer(moduleName, parentPath)
+    
+    cli.main()
 
     # TODO: Print out the analyzed class's inheritance information.
     #
@@ -30,17 +32,18 @@ def main ():
     # methods: a_method, lib.C.c_method1, lib.C.c_method2
     # look-up below
 
-def masterAnalyzer(moduleName):
+def masterAnalyzer(moduleName, parentPath):
     if moduleName in global_dictionary["modules_dictionary"]:
         return
-    with open(topPath + "/" + moduleName + ".py", "r") as source:
+    with open(parentPath / Path(moduleName + ".py"), "r") as source:
         tree = ast.parse(source.read())
-    subAnalyzerInstance = subAnalyzer(moduleName)
+    subAnalyzerInstance = subAnalyzer(moduleName, parentPath)
     subAnalyzerInstance.visit(tree)
 
 class subAnalyzer(ast.NodeVisitor):
-    def __init__(self, moduleName):
+    def __init__(self, moduleName, parentPath):
         self.highestLevel = global_dictionary["modules_dictionary"][moduleName] = moduleInfo(moduleName)
+        self.parentPath = parentPath
 
     def visit_Import(self, node):
         importInfoBuilder(self, node)
@@ -72,6 +75,7 @@ class moduleInfo():
             f"Module Name = {self.name}\n"
             f"Module Imports =\n{self.imports}\n"
             f"Module Classes =\n{self.classes}\n"
+            f"Module Functions =\n{self.functions}\n"
         )
 
 def functionInfoBuilder(analyzer, node):
@@ -86,6 +90,11 @@ class FunctionInfo():
         else:
             self.parentType = "Module"
         self.parent = parent
+    
+    def __repr__(self):
+        return(
+            f"Name = {self.name}"
+        )
 
 def classInfoBuilder(analyzer, node):
     analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
@@ -99,7 +108,10 @@ def classInfoBuilder(analyzer, node):
             else:
                 fullName = analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + fullName].name
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
-        classInstance.inherited_functions[f"Inherited from: {fullName}"] = classInstance.inherited_classes[fullName].functions
+        classInstance.inherited_functions[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
+        for k, v in global_dictionary["classes_dictionary"][fullName].inherited_classes.items():
+            classInstance.inherited_classes[k] = v
+            classInstance.inherited_functions[f"Inherited from: {k}"] = v.functions
     return classInstance
 
 def asname_to_name(analyzer, formerName):
@@ -121,11 +133,16 @@ class ClassInfo():
         self.inherited_classes: dict[ClassInfo] = {}
         self.functions: dict[FunctionInfo] = {}
         self.inherited_functions: dict[FunctionInfo] = {}
+        self.printableClassList = []
 
     def __repr__(self):
+        for inherited_class in self.inherited_classes.values():
+            self.printableClassList.append(inherited_class.name)
         return (
-            f"Class Name = {self.name}\n"
-            f"Inherited Classes = {self.inherited_classes}\n"
+            f"\nClass Name = {self.name}"
+            f"\nFunctions = {self.functions}"
+            f"\nInherited Classes = {self.printableClassList}"
+            f"\nInherited Functions = {self.inherited_functions}\n"
         )
 
 def importInfoBuilder(analyzer, node):
@@ -133,20 +150,20 @@ def importInfoBuilder(analyzer, node):
         upperImportInfo = importInfo(
             alias.name,
             getattr(alias, "asname", None),
-            getattr(node, "module", None))
+            getattr(node, "module", None), analyzer.parentPath)
         analyzer.highestLevel.imports[upperImportInfo.name] = upperImportInfo
 
 class importInfo():
-    def __init__(self, name, asname, module):
+    def __init__(self, name, asname, module, parentPath):
         self.name = name
         self.asname: str = asname
         if module != None:
             self.type = "Object"
-            masterAnalyzer(module)
+            masterAnalyzer(module, parentPath)
             self.module: moduleInfo = global_dictionary["modules_dictionary"][module]
         else:
             self.type = "Module"
-            masterAnalyzer(name)
+            masterAnalyzer(name, parentPath)
             self.module: moduleInfo = global_dictionary["modules_dictionary"][name]
 
     def __repr__(self):
@@ -154,14 +171,14 @@ class importInfo():
             if self.type == "Object":
                 return (
                     f"\nReal Name = {self.name}\n"
-                    f"User-generated Name = {self.asname}\n"
+                    f"Alias = {self.asname}\n"
                     f"Import Type = {self.type}\n"
                     f"Module = {self.module.name}"
                 )
             else:
                 return(
                     f"\nReal Name = {self.name}\n"
-                    f"User-generated Name = {self.asname}\n"
+                    f"Alias = {self.asname}\n"
                     f"Import Type = {self.type}\n"
                 )
         else:
@@ -177,6 +194,5 @@ class importInfo():
                     f"Import Type = {self.type}\n"
                 )
 
-args = cli.parser.parse_args()
-topPath = args.file_name.rsplit("/", 1)[0]
-main()
+if __name__ == '__main__':
+    main()

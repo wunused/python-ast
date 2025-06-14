@@ -10,4 +10,8 @@ class B(pinho):
         pass
 class new(B):
     pass
+
+def main():
+    pass
+
 a = A()
