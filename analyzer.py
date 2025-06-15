@@ -53,19 +53,25 @@ class subAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ClassDef(self, node):
-        self.previousLevel = self.highestLevel
+        self.classPreviousLevel = self.highestLevel
         self.highestLevel = classInfoBuilder(self, node)
         self.generic_visit(node)
-        self.highestLevel = self.previousLevel
+        self.highestLevel = self.classPreviousLevel
 
     def visit_FunctionDef(self, node):
-        functionInfoBuilder(self, node)
+        self.functionPreviousLevel = self.highestLevel
+        self.highestLevel = functionInfoBuilder(self, node)
         self.generic_visit(node)
-        
+        self.highestLevel = self.functionPreviousLevel
+    
+    def visit_arguments(self, node):
+        get_args(self, node)
+        self.generic_visit(node)
 
 def functionInfoBuilder(analyzer, node):
     analyzer.highestLevel.functions[node.name] = functionInstance = FunctionInfo(node.name, analyzer.highestLevel)
     global_dictionary["functions_dictionary"][functionInstance] = functionInstance
+    return functionInstance
 
 def classInfoBuilder(analyzer, node):
     analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
@@ -84,6 +90,11 @@ def classInfoBuilder(analyzer, node):
             classInstance.inherited_classes[k] = v
             classInstance.inherited_functions[f"Inherited from: {k}"] = v.functions
     return classInstance
+
+def get_args(analyzer, node):
+    for arg in node.args:
+            #if hasattr(innerArg, "arg"):
+            analyzer.highestLevel.arguments[arg.arg] = ArgumentInfo(arg.arg, getFullName(getattr(arg, "annotation", None)))
 
 def asname_to_name(analyzer, formerName):
     for key in analyzer.highestLevel.imports.values():
@@ -183,13 +194,24 @@ class ClassInfo():
 class FunctionInfo():
     def __init__(self, name, parent):
         self.name = name
-        self.arguments = []
+        self.arguments: dict[ArgumentInfo] = {}
         if isinstance(parent, ClassInfo):
             self.parentType = "Class"
         else:
             self.parentType = "Module"
         self.parent = parent
 
+    def __repr__(self):
+        return(
+            f"Name = {self.name}\n"
+            f"Arguments = {self.arguments}\n"
+        )
+
+class ArgumentInfo():
+    def __init__(self, name, annotation):
+        self.name = name
+        self.annotation = annotation
+        #self.default = default
     def __repr__(self):
         return(
             f"Name = {self.name}"

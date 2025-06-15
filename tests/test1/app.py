@@ -11,7 +11,7 @@ class B(pinho):
 class new(B):
     pass
 
-def main():
-    pass
+def main(b, c, d):
+    print(b, c, d)
 
 a = A()
