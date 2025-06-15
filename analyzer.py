@@ -1,35 +1,14 @@
 import ast
 import cli
-from cli import args
-from cli import global_dictionary
-from cli import filePath
+from cli import args, global_dictionary, filePath
 from pathlib import Path
 
 def main ():
-    # TODO: Change the user interface to take the analysis filename as a
-    # command line argument, and the class to analyze.
-    # Use the argparse library to register the command line arguments.
-    #
-    # For example:
-    # python3 analyzer.py app.py "app.A"
-    
-    # because we want to analyze any form of a file anywhere, it needs to be able to take either a relative path or an absolute path
-    # we assume all other lined modules will have the same parent as first module
-    
     args
     parentPath = filePath.parent
     moduleName = filePath.stem
     masterAnalyzer(moduleName, parentPath)
-    
     cli.main()
-
-    # TODO: Print out the analyzed class's inheritance information.
-    #
-    # Example:
-    # python3 analyzer.py app.py "app.A"
-    # app.A
-    # inherited classes: lib.C
-    # methods: a_method, lib.C.c_method1, lib.C.c_method2
 
 def masterAnalyzer(moduleName, parentPath):
     if moduleName in global_dictionary["modules_dictionary"]:
