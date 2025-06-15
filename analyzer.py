@@ -92,9 +92,16 @@ def classInfoBuilder(analyzer, node):
     return classInstance
 
 def get_args(analyzer, node):
-    for arg in node.args:
-            #if hasattr(innerArg, "arg"):
-            analyzer.highestLevel.arguments[arg.arg] = ArgumentInfo(arg.arg, getFullName(getattr(arg, "annotation", None)))
+    defaultList = node.defaults
+    defaultListLength = len(defaultList)
+    k = j = 0
+    for innerArg in node.args:
+        if j == len(node.args) - defaultListLength and k < defaultListLength:
+            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)), defaultList[k].value)
+            k += 1
+        elif k < defaultListLength:
+            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
+            j += 1
 
 def asname_to_name(analyzer, formerName):
     for key in analyzer.highestLevel.imports.values():
@@ -161,7 +168,7 @@ class importInfo():
 class moduleInfo():
     def __init__(self, name):
         self.name: str = name
-        self.imports: dict[importInfo] = {} # use dictionaries to look up by name
+        self.imports: dict[importInfo] = {}
         self.classes: dict = {}
         self.functions: dict = {}
 
@@ -208,13 +215,15 @@ class FunctionInfo():
         )
 
 class ArgumentInfo():
-    def __init__(self, name, annotation):
+    def __init__(self, name, annotation, default = None):
         self.name = name
         self.annotation = annotation
-        #self.default = default
+        self.default = default
     def __repr__(self):
         return(
-            f"Name = {self.name}"
+            f"\nName = {self.name}\n"
+            f"Annotation = {self.annotation}\n"
+            f"Default Value = {self.default}\n"
         )
 
 if __name__ == '__main__':
