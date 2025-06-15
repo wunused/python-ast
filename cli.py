@@ -31,4 +31,4 @@ def classOutput():
     pprint(global_dictionary["classes_dictionary"][args.class_name])
 
 def functionOutput():
-    pass
+    pprint(global_dictionary["functions_dictionary"][args.function_name])
