@@ -69,8 +69,8 @@ class subAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
 def functionInfoBuilder(analyzer, node):
-    analyzer.highestLevel.functions[node.name] = functionInstance = FunctionInfo(node.name, analyzer.highestLevel)
-    global_dictionary["functions_dictionary"][functionInstance] = functionInstance
+    analyzer.highestLevel.functions[analyzer.highestLevel.name + "." + node.name] = functionInstance = FunctionInfo(node.name, analyzer.highestLevel)
+    global_dictionary["functions_dictionary"][analyzer.highestLevel.name + "." + functionInstance.name] = functionInstance
     return functionInstance
 
 def classInfoBuilder(analyzer, node):
