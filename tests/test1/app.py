@@ -9,5 +9,11 @@ class B(pinho):
     def b_method(self):
         pass
 class new(B):
-    pass
+    def main(b: str, c: int = 3, d = 4):
+        print(b, c, d)
+    def new(self):
+        pass
+
+
+
 a = A()
