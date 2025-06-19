@@ -3,6 +3,8 @@ import cli
 from cli import args, global_dictionary, filePath
 from pathlib import Path
 
+#start:
+
 def main ():
     args
     parentPath = filePath.parent
