@@ -44,13 +44,13 @@ class subAnalyzer(ast.NodeVisitor):
         self.highestLevel = functionInfoBuilder(self, node)
         self.generic_visit(node)
         self.highestLevel = self.functionPreviousLevel
-    
-    def visit_arguments(self, node):
-        get_args(self, node)
-        self.generic_visit(node)
+
+#    def visit_arguments(self, node):
+#        get_args(self, node)
+#        self.generic_visit(node)
 
 def functionInfoBuilder(analyzer, node):
-    analyzer.highestLevel.functions[analyzer.highestLevel.name + "." + node.name] = functionInstance = FunctionInfo(node.name, analyzer.highestLevel)
+    analyzer.highestLevel.functions[analyzer.highestLevel.name + "." + node.name] = functionInstance = FunctionInfo(analyzer.highestLevel.name + "." + node.name, analyzer.highestLevel)
     global_dictionary["functions_dictionary"][analyzer.highestLevel.name + "." + functionInstance.name] = functionInstance
     return functionInstance
 
@@ -66,23 +66,24 @@ def classInfoBuilder(analyzer, node):
             else:
                 fullName = analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + fullName].name
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
-        classInstance.inherited_functions[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
+        classInstance.inherited_functions_by_class[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
+        
         for k, v in global_dictionary["classes_dictionary"][fullName].inherited_classes.items():
             classInstance.inherited_classes[k] = v
-            classInstance.inherited_functions[f"Inherited from: {k}"] = v.functions
+            classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
     return classInstance
 
-def get_args(analyzer, node):
-    defaultList = node.defaults
-    defaultListLength = len(defaultList)
-    k = j = 0
-    for innerArg in node.args:
-        if j == len(node.args) - defaultListLength and k < defaultListLength:
-            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)), defaultList[k].value)
-            k += 1
-        elif k < defaultListLength:
-            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
-            j += 1
+#def get_args(analyzer, node):
+#    defaultList = node.defaults
+#    defaultListLength = len(defaultList)
+#    k = j = 0
+#    for innerArg in node.args:
+#        if j == len(node.args) - defaultListLength and k < defaultListLength:
+#            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)), defaultList[k].value)
+#            k += 1
+#        elif k < defaultListLength:
+#            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
+#            j += 1
 
 def asname_to_name(analyzer, formerName):
     for key in analyzer.highestLevel.imports.values():
@@ -102,7 +103,8 @@ def importInfoBuilder(analyzer, node):
         upperImportInfo = importInfo(
             alias.name,
             getattr(alias, "asname", None),
-            getattr(node, "module", None), analyzer.parentPath)
+            getattr(node, "module", None),
+            analyzer.parentPath)
         analyzer.highestLevel.imports[upperImportInfo.name] = upperImportInfo
 
 class importInfo():
@@ -119,32 +121,18 @@ class importInfo():
             self.module: moduleInfo = global_dictionary["modules_dictionary"][name]
 
     def __repr__(self):
+        statement = f"{self.name} "
         if self.asname is not None:
             if self.type == "Object":
-                return (
-                    f"\nReal Name = {self.name}\n"
-                    f"Alias = {self.asname}\n"
-                    f"Import Type = {self.type}\n"
-                    f"Module = {self.module.name}"
-                )
+                statement += f"{self.type} as {self.asname} from {self.module.name}"
             else:
-                return(
-                    f"\nReal Name = {self.name}\n"
-                    f"Alias = {self.asname}\n"
-                    f"Import Type = {self.type}\n"
-                )
+                statement += f"{self.type} as {self.asname}"
         else:
             if self.type == "Object":
-                return (
-                    f"\nName = {self.name}\n"
-                    f"Import Type = {self.type}\n"
-                    f"Module = {self.module.name}"
-                )
+                statement += f"{self.type} from {self.module.name}"
             else:
-                return(
-                    f"\nName = {self.name}\n"
-                    f"Import Type = {self.type}\n"
-                )
+                statement += f"{self.type}"
+        return statement
 
 class moduleInfo():
     def __init__(self, name):
@@ -152,13 +140,25 @@ class moduleInfo():
         self.imports: dict[importInfo] = {}
         self.classes: dict = {}
         self.functions: dict = {}
+        self.imports_list = []
+        self.classes_list = []
+        self.functions_list = []
 
     def __repr__(self):
+        if self.imports:
+            for import_instance in self.imports.values():
+                self.imports_list.append(import_instance.__repr__())
+        if self.classes:
+            for class_instance in self.classes.values():
+                self.classes_list.append(class_instance.name)
+        if self.functions:
+            for function in self.functions.values():
+                self.functions_list.append(function.name)
         return (
-            f"Module Name = {self.name}\n"
-            f"Module Imports =\n{self.imports}\n"
-            f"Module Classes =\n{self.classes}\n"
-            f"Module Functions =\n{self.functions}\n"
+            f"\nModule Name:\n    {self.name}\n"
+            f"Module Imports:\n    {self.imports_list}\n"
+            f"Module Classes:\n    {self.classes_list}\n{self.classes}\n"
+            f"Module Functions:\n    {self.functions_list}\n"
         )
 
 class ClassInfo():
@@ -166,23 +166,32 @@ class ClassInfo():
         self.name = name
         self.inherited_classes: dict[ClassInfo] = {}
         self.functions: dict[FunctionInfo] = {}
-        self.inherited_functions: dict[FunctionInfo] = {}
+        self.inherited_functions_by_class: dict[FunctionInfo] = {}
         self.printableClassList = []
+        self.functions_list = []
+        self.inherited_functions_list = []
 
     def __repr__(self):
-        for inherited_class in self.inherited_classes.values():
-            self.printableClassList.append(inherited_class.name)
+        if self.inherited_classes:
+            for inherited_class in self.inherited_classes.values():
+                self.printableClassList.append(inherited_class.name)
+        if self.functions:
+            for function in self.functions.values():
+                self.functions_list.append(function.name)
+        if self.inherited_functions_by_class:
+            for inherited_function_dict in self.inherited_functions_by_class.values():
+                for inherited_function in inherited_function_dict.values():
+                    self.inherited_functions_list.append(inherited_function.name)
         return (
-            f"\nClass Name = {self.name}"
-            f"\nFunctions = {self.functions}"
-            f"\nInherited Classes = {self.printableClassList}"
-            f"\nInherited Functions = {self.inherited_functions}\n"
+            f"\n    Functions:\n        {self.functions_list}"
+            f"\n    Inherited Classes:\n        {self.printableClassList}"
+            f"\n    Inherited Functions:\n        {self.inherited_functions_list}\n"
         )
 
 class FunctionInfo():
     def __init__(self, name, parent):
         self.name = name
-        self.arguments: dict[ArgumentInfo] = {}
+        # self.arguments: dict[ArgumentInfo] = {}
         if isinstance(parent, ClassInfo):
             self.parentType = "Class"
         else:
@@ -191,21 +200,20 @@ class FunctionInfo():
 
     def __repr__(self):
         return(
-            f"Name = {self.name}\n"
-            f"Arguments = {self.arguments}\n"
+            f"Name:\n    {self.name}\n"
         )
 
-class ArgumentInfo():
-    def __init__(self, name, annotation, default = None):
-        self.name = name
-        self.annotation = annotation
-        self.default = default
-    def __repr__(self):
-        return(
-            f"\nName = {self.name}\n"
-            f"Annotation = {self.annotation}\n"
-            f"Default Value = {self.default}\n"
-        )
+#class ArgumentInfo():
+#    def __init__(self, name, annotation, default = None):
+#        self.name = name
+#        self.annotation = annotation
+#        self.default = default
+#    def __repr__(self):
+#        return(
+#            f"\nName = {self.name}\n"
+#            f"Annotation = {self.annotation}\n"
+#            f"Default Value = {self.default}\n"
+#        )
 
 if __name__ == '__main__':
     main()
