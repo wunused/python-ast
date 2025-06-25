@@ -89,6 +89,7 @@ def classInfoBuilder(analyzer, node):
 
     for base in node.bases: 
         fullName = asname_to_name(analyzer, getFullName(base))
+        #breakpoint()
         if "." not in fullName:
             if fullName in analyzer.highestLevel.imports:
                 fullName = analyzer.highestLevel.imports[fullName].module.name + "." + fullName
@@ -108,11 +109,16 @@ def functionInfoBuilder(analyzer, node):
     return functionInstance
 
 def asname_to_name(analyzer, formerName):
-    for key in analyzer.highestLevel.imports.values():
-        if formerName == key.asname:
-            return key.name
-        else:
-            return formerName
+    #breakpoint()
+    # whats breaking: case where module imports nothing - fixed
+    if analyzer.highestLevel.imports:
+        for key in analyzer.highestLevel.imports.values():
+            if formerName == key.asname:
+                return key.name
+            else:
+                return formerName
+    else:
+        return formerName
 
 def getFullName(base):
     if isinstance(base, ast.Name):
