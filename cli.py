@@ -2,7 +2,8 @@ import argparse
 from pprint import pprint
 from pathlib import Path
 
-global_dictionary = {"modules_dictionary": {},
+global_dictionary = {"packages_dictionary": {},
+                    "modules_dictionary": {},
                     "classes_dictionary": {},
                     "functions_dictionary": {}}
 

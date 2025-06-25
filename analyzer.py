@@ -9,23 +9,29 @@ import sys
 
 def main ():
     args
-    parentPath = filePath.parent
-    moduleName = filePath.stem
-    masterAnalyzer(moduleName, parentPath)
+    if filePath.parent == ".":
+        parentPath = Path.cwd()
+    elif (Path.cwd() / filePath).exists():
+        parentPath = Path.cwd() / filePath.parent
+    elif filePath.exists():
+        parentPath = filePath.parent
+    moduleName = filePath.name
+    masterAnalyzer(parentPath / moduleName)
     cli.main()
 
-def masterAnalyzer(moduleName, parentPath):
-    if moduleName in global_dictionary["modules_dictionary"]:
+def masterAnalyzer(modulePath):
+    if str(modulePath) in global_dictionary["modules_dictionary"]:
         return
-    with open(parentPath / Path(moduleName + ".py"), "r") as source:
+    # this can't open a package
+    with open(modulePath, "r") as source:
         tree = ast.parse(source.read())
-    subAnalyzerInstance = subAnalyzer(moduleName, parentPath)
+    subAnalyzerInstance = subAnalyzer(modulePath)
     subAnalyzerInstance.visit(tree)
 
 class subAnalyzer(ast.NodeVisitor):
-    def __init__(self, moduleName, parentPath):
-        self.highestLevel = global_dictionary["modules_dictionary"][moduleName] = moduleInfo(moduleName)
-        self.parentPath = parentPath
+    def __init__(self, modulePath):
+        self.highestLevel = global_dictionary["modules_dictionary"][str(modulePath)] = moduleInfo(str(modulePath))
+        self.parentPath = modulePath.parent
 
     def visit_Import(self, node):
         importInfoBuilder(self, node)
@@ -54,6 +60,7 @@ class subAnalyzer(ast.NodeVisitor):
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
         if alias.name in sys.builtin_module_names or getattr(node, "module", None) in sys.builtin_module_names:
+            print(f"Skipping builtin module: {alias.name}")
             continue
         upperImportInfo = importInfo(
             alias.name,
@@ -64,11 +71,12 @@ def importInfoBuilder(analyzer, node):
 
 def file_checker(moduleName, parentPath, tryNumber):
     file_path = parentPath / Path(moduleName + ".py")
-    package_path = Path(parentPath) / moduleName / "__init__.py"
+    package_constructor_path = parentPath / Path(moduleName + "/__init__.py")
     if file_path.exists():
-        return parentPath
-    elif package_path.exists():
-        return Path(parentPath) / moduleName
+        return file_path
+    elif package_constructor_path.exists():
+        #global_dictionary[][str(parentPath / moduleName)] = packageInfo(package_constructor_path)
+        return package_constructor_path
     else:
         if tryNumber >= len(sys.path) - 1:
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
@@ -132,32 +140,49 @@ class importInfo():
         tryNumber = -1
         if module != None:
             self.type = "Object"
-            self.parentPath = file_checker(module, parentPath, tryNumber)
-            masterAnalyzer(module, self.parentPath)
-            self.module: moduleInfo = global_dictionary["modules_dictionary"][module]
+            if "." in module:
+                module = module.replace(".", "/")
+                leading_slashes = 0
+                for c in module:
+                    if c == "/":
+                        leading_slashes += 1
+                    else:
+                        break
+                module = module[leading_slashes:]
+                if leading_slashes > 1:
+                    for _ in range(1, leading_slashes):
+                        parentPath = parentPath.parent
+            self.modulePath = file_checker(module, parentPath, tryNumber)
+            masterAnalyzer(self.modulePath)
+            self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
         else:
             self.type = "Module"
-            self.parentPath = file_checker(name, parentPath, tryNumber)
-            masterAnalyzer(name, self.parentPath)
-            self.module: moduleInfo = global_dictionary["modules_dictionary"][name]
+            self.modulePath = file_checker(name, parentPath, tryNumber)
+            masterAnalyzer(self.modulePath)
+            self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
 
     def __repr__(self):
-        statement = f"{self.name} "
+        statement = f"{self.name} {self.type} "
         if self.asname is not None:
             if self.type == "Object":
-                statement += f"{self.type} as {self.asname} from {self.module.name}"
+                statement += f"as {self.asname} from {self.module.name}"
             else:
-                statement += f"{self.type} as {self.asname}"
+                statement += f"as {self.asname}"
         else:
             if self.type == "Object":
-                statement += f"{self.type} from {self.module.name}"
+                statement += f"from {self.module.name}"
             else:
-                statement += f"{self.type}"
+                statement.rstrip()
         return statement
+
+class packageInfo():
+    def __init__(self):
+        self.constructor: dict[moduleInfo] = {}
 
 class moduleInfo():
     def __init__(self, name):
-        self.name: str = name
+        self.package: packageInfo
+        self.name: str = name # should change to be full path
         self.imports: dict[importInfo] = {}
         self.classes: dict = {}
         self.functions: dict = {}
