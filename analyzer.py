@@ -157,6 +157,8 @@ class importInfo():
             self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
         else:
             self.type = "Module"
+            if "." in name:
+                name = name.replace(".", "/")
             self.modulePath = file_checker(name, parentPath, tryNumber)
             masterAnalyzer(self.modulePath)
             self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
