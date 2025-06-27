@@ -57,7 +57,7 @@ def main():
         if args.function_name:
             functionOutput()
         if args.module_name:
-            moduleOutput(args.module_name)
+            moduleOutput(str(Path.cwd() / Path(args.module_name)))
 
 def moduleOutput(moduleName):
     pprint(global_dictionary["modules_dictionary"][moduleName])

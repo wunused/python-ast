@@ -18,7 +18,7 @@ def main ():
         parentPath = filePath.parent
     moduleName = filePath.name
     masterAnalyzer(parentPath / moduleName)
-    breakpoint()
+    #breakpoint()
     cli.main()
 
 def masterAnalyzer(modulePath):
@@ -28,6 +28,7 @@ def masterAnalyzer(modulePath):
         tree = ast.parse(source.read())
     subAnalyzerInstance = subAnalyzer(modulePath)
     subAnalyzerInstance.visit(tree)
+    level.pop()
 
 class subAnalyzer(ast.NodeVisitor):
     def __init__(self, modulePath):
@@ -226,7 +227,7 @@ class importInfo():
             if self.type == "Object":
                 statement += f"from {self.module.name}"
             else:
-                statement.rstrip()
+                statement = statement.rstrip()
         return statement
 
 class packageInfo():
