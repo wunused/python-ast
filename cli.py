@@ -7,6 +7,37 @@ global_dictionary = {"packages_dictionary": {},
                     "classes_dictionary": {},
                     "functions_dictionary": {}}
 
+class levelStack():
+    def __init__(self):
+        self.stack = []
+
+    def push(self, level):
+        level.parent = self.current_level()
+        self.stack.append(level)
+
+    def pop(self):
+        if self.stack:
+            return self.stack.pop()
+        else:
+            raise IndexError("Stack is empty")
+
+    def size(self):
+        return len(self.stack)
+    
+    def current_level(self):
+        if self.stack:
+            return self.stack[-1]
+        else:
+            return None
+    # create a function to get the previous level recursively without popping it
+    def previous_level(self):
+        if len(self.stack) > 1:
+            return self.stack[-2]
+        else:
+            return None
+
+level = levelStack()
+
 parser = argparse.ArgumentParser()
 parser.add_argument("file_name", help="analyzes inserted python file")
 parser.add_argument("-c", "--class_name", help="provides details for a class | Usage: module.class")
@@ -19,7 +50,7 @@ filePath = Path(args.file_name)
 def main():
     non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False)}
     if not non_file_name_args:
-        moduleOutput(filePath.stem)
+        moduleOutput(str(Path.cwd() / filePath))
     else:
         if args.class_name:
             classOutput()

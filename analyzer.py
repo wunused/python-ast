@@ -3,6 +3,7 @@ import cli
 from cli import args, global_dictionary, filePath
 from pathlib import Path
 import sys
+from cli import level
 
 
 #start:
@@ -17,12 +18,12 @@ def main ():
         parentPath = filePath.parent
     moduleName = filePath.name
     masterAnalyzer(parentPath / moduleName)
+    breakpoint()
     cli.main()
 
 def masterAnalyzer(modulePath):
     if str(modulePath) in global_dictionary["modules_dictionary"]:
         return
-    # this can't open a package
     with open(modulePath, "r") as source:
         tree = ast.parse(source.read())
     subAnalyzerInstance = subAnalyzer(modulePath)
@@ -30,7 +31,8 @@ def masterAnalyzer(modulePath):
 
 class subAnalyzer(ast.NodeVisitor):
     def __init__(self, modulePath):
-        self.highestLevel = global_dictionary["modules_dictionary"][str(modulePath)] = moduleInfo(str(modulePath))
+        self.module_level = global_dictionary["modules_dictionary"][str(modulePath)] = moduleInfo(str(modulePath))
+        level.push(self.module_level)
         self.parentPath = modulePath.parent
 
     def visit_Import(self, node):
@@ -42,16 +44,14 @@ class subAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ClassDef(self, node):
-        self.classPreviousLevel = self.highestLevel
-        self.highestLevel = classInfoBuilder(self, node)
+        level.push(classInfoBuilder(self, node))
         self.generic_visit(node)
-        self.highestLevel = self.classPreviousLevel
+        level.pop()
 
     def visit_FunctionDef(self, node):
-        self.functionPreviousLevel = self.highestLevel
-        self.highestLevel = functionInfoBuilder(self, node)
+        level.push(functionInfoBuilder(self, node))
         self.generic_visit(node)
-        self.highestLevel = self.functionPreviousLevel
+        level.pop()
 
 #    def visit_arguments(self, node):
 #        get_args(self, node)
@@ -62,12 +62,13 @@ def importInfoBuilder(analyzer, node):
         if alias.name in sys.builtin_module_names or getattr(node, "module", None) in sys.builtin_module_names:
             print(f"Skipping builtin module: {alias.name}")
             continue
+        # create some check for when this is inside a module or a class or function
         upperImportInfo = importInfo(
             alias.name,
             getattr(alias, "asname", None),
             getattr(node, "module", None),
             analyzer.parentPath)
-        analyzer.highestLevel.imports[upperImportInfo.name] = upperImportInfo
+        level.current_level().imports[upperImportInfo.name] = upperImportInfo
 
 def file_checker(moduleName, parentPath, tryNumber):
     file_path = parentPath / Path(moduleName + ".py")
@@ -75,7 +76,6 @@ def file_checker(moduleName, parentPath, tryNumber):
     if file_path.exists():
         return file_path
     elif package_constructor_path.exists():
-        #global_dictionary[][str(parentPath / moduleName)] = packageInfo(package_constructor_path)
         return package_constructor_path
     else:
         if tryNumber >= len(sys.path) - 1:
@@ -83,18 +83,56 @@ def file_checker(moduleName, parentPath, tryNumber):
         tryNumber += 1
         return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
-def classInfoBuilder(analyzer, node):
-    analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + node.name] = classInstance = ClassInfo(analyzer.highestLevel.name + "." + node.name)
-    global_dictionary["classes_dictionary"][classInstance.name] = classInstance
+# TODO: start checking if class names are properly being assigned down to the full path
 
+def classInfoBuilder(analyzer, node):
+    level.current_level().classes[level.current_level().name + "." + node.name] = classInstance = ClassInfo(level.current_level().name + "." + node.name)
+    global_dictionary["classes_dictionary"][classInstance.name] = classInstance
+    return getInheritance(analyzer, node, classInstance)
+
+def functionInfoBuilder(analyzer, node):
+    #breakpoint()
+    level.current_level().functions[level.current_level().name + "." + node.name] = functionInstance = FunctionInfo(level.current_level().name + "." + node.name, level.current_level())
+    global_dictionary["functions_dictionary"][level.current_level().name + "." + functionInstance.name] = functionInstance
+    return functionInstance
+
+def getInheritance(analyzer, node, classInstance):
     for base in node.bases: 
         fullName = asname_to_name(analyzer, getFullName(base))
+        
+        # i want some for loop that keeps going back through the level stack
+        
         #breakpoint()
-        if "." not in fullName:
-            if fullName in analyzer.highestLevel.imports:
-                fullName = analyzer.highestLevel.imports[fullName].module.name + "." + fullName
-            else:
-                fullName = analyzer.highestLevel.classes[analyzer.highestLevel.name + "." + fullName].name
+        if "." not in fullName: # this means either the class was imported or was defined in the same module
+            this_level = level.current_level()
+            while True:
+                if fullName in this_level.imports: #works because the keys dont have full path name since it belongs to that specific object
+                    fullName = this_level.imports[fullName].module.name + "." + fullName
+                    break
+                elif (this_level.name + "." + fullName) in this_level.classes:
+                    fullName = this_level.classes[this_level.name + "." + fullName].name
+                    break
+                else:
+                    this_level = this_level.parent
+                    if this_level is None:
+                        raise ValueError(f"Class {fullName} not found in imports or classes.")
+        else: # dot in fullName
+            module = fullName.split(".")[0]
+            this_level = level.current_level()
+            #breakpoint()
+            # look in the imports with checking if module in imports
+            while True:
+                if module in this_level.imports:
+                    fullName = this_level.imports[module].module.name + "." + fullName.split(".")[1]
+                    break
+                else:
+                    #breakpoint()
+                    this_level = this_level.parent
+                    if this_level is None:
+                        raise ValueError(f"Class {fullName} not found in imports.")
+
+            # look for module in pre-dot
+        # if there is a dot, we know where it comes from, so we need to look in the imports for the full name (path) 
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
         classInstance.inherited_functions_by_class[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
         
@@ -103,16 +141,11 @@ def classInfoBuilder(analyzer, node):
             classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
     return classInstance
 
-def functionInfoBuilder(analyzer, node):
-    analyzer.highestLevel.functions[analyzer.highestLevel.name + "." + node.name] = functionInstance = FunctionInfo(analyzer.highestLevel.name + "." + node.name, analyzer.highestLevel)
-    global_dictionary["functions_dictionary"][analyzer.highestLevel.name + "." + functionInstance.name] = functionInstance
-    return functionInstance
-
 def asname_to_name(analyzer, formerName):
     #breakpoint()
     # whats breaking: case where module imports nothing - fixed
-    if analyzer.highestLevel.imports:
-        for key in analyzer.highestLevel.imports.values():
+    if level.current_level().imports:
+        for key in level.current_level().imports.values():
             if formerName == key.asname:
                 return key.name
             else:
@@ -132,12 +165,11 @@ def getFullName(base):
 #    k = j = 0
 #    for innerArg in node.args:
 #        if j == len(node.args) - defaultListLength and k < defaultListLength:
-#            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)), defaultList[k].value)
+#            level.current_level().arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)), defaultList[k].value)
 #            k += 1
 #        elif k < defaultListLength:
-#            analyzer.highestLevel.arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
+#            level.current_level().arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
 #            j += 1
-
 
 class importInfo():
     def __init__(self, name, asname, module, parentPath):
@@ -165,6 +197,16 @@ class importInfo():
             self.type = "Module"
             if "." in name:
                 name = name.replace(".", "/")
+                leading_slashes = 0
+                for c in module:
+                    if c == "/":
+                        leading_slashes += 1
+                    else:
+                        break
+                name = name[leading_slashes:]
+                if leading_slashes > 1:
+                    for _ in range(1, leading_slashes):
+                        parentPath = parentPath.parent
             self.modulePath = file_checker(name, parentPath, tryNumber)
             masterAnalyzer(self.modulePath)
             self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
@@ -187,9 +229,8 @@ class packageInfo():
     def __init__(self):
         self.constructor: dict[moduleInfo] = {}
 
-class moduleInfo():
+class moduleInfo(stackItem):
     def __init__(self, name):
-        self.package: packageInfo
         self.name: str = name # should change to be full path
         self.imports: dict[importInfo] = {}
         self.classes: dict = {}
@@ -215,9 +256,10 @@ class moduleInfo():
             f"Module Functions:\n    {self.functions_list}\n"
         )
 
-class ClassInfo():
+class ClassInfo(stackItem):
     def __init__(self, name):
         self.name = name
+        self.imports: dict[importInfo] = {}
         self.classes: dict[ClassInfo] = {}
         self.inherited_classes: dict[ClassInfo] = {}
         self.functions: dict[FunctionInfo] = {}
@@ -243,7 +285,7 @@ class ClassInfo():
             f"\n    Inherited Functions:\n        {self.inherited_functions_list}\n"
         )
 
-class FunctionInfo():
+class FunctionInfo(stackItem):
     def __init__(self, name, parent):
         self.name = name
         self.classes: dict[ClassInfo] = {}
