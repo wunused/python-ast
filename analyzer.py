@@ -171,6 +171,10 @@ def getFullName(base):
 #            level.current_level().arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
 #            j += 1
 
+class stackItem():
+    def __init__(self):
+        self.parent
+
 class importInfo():
     def __init__(self, name, asname, module, parentPath):
         self.name = name
