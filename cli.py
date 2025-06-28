@@ -5,7 +5,8 @@ from pathlib import Path
 global_dictionary = {"packages_dictionary": {},
                     "modules_dictionary": {},
                     "classes_dictionary": {},
-                    "functions_dictionary": {}}
+                    "functions_dictionary": {},
+                    "from_builtins": {}}
 
 class levelStack():
     def __init__(self):

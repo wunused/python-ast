@@ -4,7 +4,7 @@ from cli import args, global_dictionary, filePath
 from pathlib import Path
 import sys
 from cli import level
-
+import builtins
 
 #start:
 
@@ -61,7 +61,11 @@ class subAnalyzer(ast.NodeVisitor):
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
         if alias.name in sys.builtin_module_names or getattr(node, "module", None) in sys.builtin_module_names:
-            print(f"Skipping builtin module: {alias.name}")
+            if hasattr(node, "module"):
+                print(f"Skipping {alias.name} object from built-in module {node.module}")
+                global_dictionary["from_builtins"][alias.name] = alias.name
+            else:
+                print(f"Skipping built-in module: {alias.name}")
             continue
         # create some check for when this is inside a module or a class or function
         upperImportInfo = importInfo(
@@ -98,9 +102,11 @@ def functionInfoBuilder(analyzer, node):
     return functionInstance
 
 def getInheritance(analyzer, node, classInstance):
-    for base in node.bases: 
+    for base in node.bases:
         fullName = asname_to_name(analyzer, getFullName(base))
-        
+        if fullName in dir(builtins) or fullName in global_dictionary["from_builtins"]:
+            print(f"Skipping built-in class: {fullName}")
+            continue
         # i want some for loop that keeps going back through the level stack
         
         #breakpoint()
@@ -116,7 +122,7 @@ def getInheritance(analyzer, node, classInstance):
                 else:
                     this_level = this_level.parent
                     if this_level is None:
-                        raise ValueError(f"Class {fullName} not found in imports or classes.")
+                        raise ValueError(f"Class {fullName} not found in imports or classes. Highest level reached: {level.current_level().name}.")
         else: # dot in fullName
             module = fullName.split(".")[0]
             this_level = level.current_level()
@@ -134,6 +140,9 @@ def getInheritance(analyzer, node, classInstance):
 
             # look for module in pre-dot
         # if there is a dot, we know where it comes from, so we need to look in the imports for the full name (path) 
+        if fullName == "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/_collections_abc.py.MutableMapping":
+            # maybe crashes because of double import? elsewhere, something imports and is returned and then goes on to analyze and it hasn't been analyzed yet?
+            breakpoint()
         classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
         classInstance.inherited_functions_by_class[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
         
