@@ -1,24 +1,14 @@
 import ast
 import cli
-from cli import args, global_dictionary, filePath
+from cli import args, global_dictionary, moduleName, parentPath
 from pathlib import Path
 import sys
 from cli import level
 import builtins
 
-#start:
-
 def main ():
     args
-    if filePath.parent == ".":
-        parentPath = Path.cwd()
-    elif (Path.cwd() / filePath).exists():
-        parentPath = Path.cwd() / filePath.parent
-    elif filePath.exists():
-        parentPath = filePath.parent
-    moduleName = filePath.name
     masterAnalyzer(parentPath / moduleName)
-    #breakpoint()
     cli.main()
 
 def masterAnalyzer(modulePath):
@@ -45,12 +35,12 @@ class subAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ClassDef(self, node):
-        level.push(classInfoBuilder(self, node))
+        level.push(classInfoBuilder(node))
         self.generic_visit(node)
         level.pop()
 
     def visit_FunctionDef(self, node):
-        level.push(functionInfoBuilder(self, node))
+        level.push(functionInfoBuilder(node))
         self.generic_visit(node)
         level.pop()
 
@@ -67,7 +57,6 @@ def importInfoBuilder(analyzer, node):
             else:
                 print(f"Skipping built-in module: {alias.name}")
             continue
-        # create some check for when this is inside a module or a class or function
         upperImportInfo = importInfo(
             alias.name,
             getattr(alias, "asname", None),
@@ -88,28 +77,22 @@ def file_checker(moduleName, parentPath, tryNumber):
         tryNumber += 1
         return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
-# TODO: start checking if class names are properly being assigned down to the full path
-
-def classInfoBuilder(analyzer, node):
+def classInfoBuilder(node):
     level.current_level().classes[level.current_level().name + "." + node.name] = classInstance = ClassInfo(level.current_level().name + "." + node.name)
     global_dictionary["classes_dictionary"][classInstance.name] = classInstance
-    return getInheritance(analyzer, node, classInstance)
+    return getInheritance(node, classInstance)
 
-def functionInfoBuilder(analyzer, node):
-    #breakpoint()
+def functionInfoBuilder(node):
     level.current_level().functions[level.current_level().name + "." + node.name] = functionInstance = FunctionInfo(level.current_level().name + "." + node.name, level.current_level())
     global_dictionary["functions_dictionary"][level.current_level().name + "." + functionInstance.name] = functionInstance
     return functionInstance
 
-def getInheritance(analyzer, node, classInstance):
+def getInheritance(node, classInstance):
     for base in node.bases:
-        fullName = asname_to_name(analyzer, getFullName(base))
+        fullName = asname_to_name(getFullName(base))
         if fullName in dir(builtins) or fullName in global_dictionary["from_builtins"]:
             print(f"Skipping built-in class: {fullName}")
             continue
-        # i want some for loop that keeps going back through the level stack
-        
-        #breakpoint()
         if "." not in fullName: # this means either the class was imported or was defined in the same module
             this_level = level.current_level()
             while True:
@@ -126,19 +109,15 @@ def getInheritance(analyzer, node, classInstance):
         else: # dot in fullName
             module = fullName.split(".")[0]
             this_level = level.current_level()
-            #breakpoint()
             # look in the imports with checking if module in imports
             while True:
                 if module in this_level.imports:
                     fullName = this_level.imports[module].module.name + "." + fullName.split(".")[1]
                     break
                 else:
-                    #breakpoint()
                     this_level = this_level.parent
                     if this_level is None:
                         raise ValueError(f"Class {fullName} not found in imports.")
-
-            # look for module in pre-dot
         # if there is a dot, we know where it comes from, so we need to look in the imports for the full name (path) 
         if fullName == "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/_collections_abc.py.MutableMapping":
             # maybe crashes because of double import? elsewhere, something imports and is returned and then goes on to analyze and it hasn't been analyzed yet?
@@ -151,9 +130,7 @@ def getInheritance(analyzer, node, classInstance):
             classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
     return classInstance
 
-def asname_to_name(analyzer, formerName):
-    #breakpoint()
-    # whats breaking: case where module imports nothing - fixed
+def asname_to_name(formerName):
     if level.current_level().imports:
         for key in level.current_level().imports.values():
             if formerName == key.asname:
