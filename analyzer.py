@@ -168,6 +168,9 @@ def getFullName(base):
         return base.id
     if isinstance(base, ast.Attribute):
         return getFullName(base.value) + "." + base.attr
+    
+def get_post_slash(something):
+    return something.split("/")[-1] if "/" in something else something
 
 #def get_args(analyzer, node):
 #    defaultList = node.defaults
@@ -226,18 +229,32 @@ class importInfo():
             self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
 
     def __repr__(self):
-        statement = f"{self.name} {self.type} "
-        if self.asname is not None:
-            if self.type == "Object":
-                statement += f"as {self.asname} from {self.module.name}"
+        if args.verbose:
+            statement = f"{self.name} {self.type} "
+            if self.asname is not None:
+                if self.type == "Object":
+                    statement += f"as {self.asname} from {self.module.name}"
+                else:
+                    statement += f"as {self.asname}"
             else:
-                statement += f"as {self.asname}"
+                if self.type == "Object":
+                    statement += f"from {self.module.name}"
+                else:
+                    statement = statement.rstrip()
+            return statement
         else:
-            if self.type == "Object":
-                statement += f"from {self.module.name}"
+            statement = f"{self.name} {self.type} "
+            if self.asname is not None:
+                if self.type == "Object":
+                    statement += f"as {self.asname} from {get_post_slash(self.module.name)}"
+                else:
+                    statement += f"as {self.asname}"
             else:
-                statement = statement.rstrip()
-        return statement
+                if self.type == "Object":
+                    statement += f"from {get_post_slash(self.module.name)}"
+                else:
+                    statement = statement.rstrip()
+            return statement
 
 class packageInfo():
     def __init__(self):
@@ -259,16 +276,27 @@ class moduleInfo(stackItem):
                 self.imports_list.append(import_instance.__repr__())
         if self.classes:
             for class_instance in self.classes.values():
-                self.classes_list.append(class_instance.name)
+                if args.verbose:
+                    self.classes_list.append(class_instance.name)
+                else:
+                    self.classes_list.append(get_post_slash(class_instance.name))
         if self.functions:
             for function in self.functions.values():
                 self.functions_list.append(function.name)
-        return (
-            f"\nModule Name:\n    {self.name}\n"
-            f"Module Imports:\n    {self.imports_list}\n"
-            f"Module Classes:\n    {self.classes_list}\n{self.classes}\n"
-            f"Module Functions:\n    {self.functions_list}\n"
-        )
+        if args.verbose:
+            return (
+                f"\nModule Name:\n    {self.name}\n"
+                f"Module Imports:\n    {self.imports_list}\n"
+                f"Module Classes:\n    {self.classes_list}\n{self.classes}\n"
+                f"Module Functions:\n    {self.functions_list}\n"
+            )
+        else:
+            return (
+                f"\nModule Name:\n    {get_post_slash(self.name)}\n"
+                f"Module Imports:\n    {self.imports_list}\n"
+                f"Module Classes:\n    {self.classes_list}\n{self.classes}\n"
+                f"Module Functions:\n    {self.functions_list}\n"
+            )
 
 class ClassInfo(stackItem):
     def __init__(self, name):
@@ -285,18 +313,26 @@ class ClassInfo(stackItem):
     def __repr__(self):
         if self.inherited_classes:
             for inherited_class in self.inherited_classes.values():
-                self.printableClassList.append(inherited_class.name)
+                if args.verbose:
+                    self.printableClassList.append(inherited_class.name)
+                else:
+                    self.printableClassList.append(get_post_slash(inherited_class.name))
         if self.functions:
             for function in self.functions.values():
-                self.functions_list.append(function.name)
+                if args.verbose:
+                    self.functions_list.append(function.name)
+                else:
+                    self.functions_list.append(get_post_slash(function.name))
         if self.inherited_functions_by_class:
             for inherited_function_dict in self.inherited_functions_by_class.values():
                 for inherited_function in inherited_function_dict.values():
-                    self.inherited_functions_list.append(inherited_function.name)
+                    if args.verbose:
+                        self.inherited_functions_list.append(inherited_function.name)
+                    else:
+                        self.inherited_functions_list.append(get_post_slash(inherited_function.name))
         return (
             f"\n    Functions:\n        {self.functions_list}"
-            f"\n    Inherited Classes:\n        {self.printableClassList}"
-            f"\n    Inherited Functions:\n        {self.inherited_functions_list}\n"
+            f"\n    Inherited Classes:\n        {self.printableClassList}"                f"\n    Inherited Functions:\n        {self.inherited_functions_list}\n"
         )
 
 class FunctionInfo(stackItem):
@@ -313,9 +349,14 @@ class FunctionInfo(stackItem):
         self.parent = parent
 
     def __repr__(self):
-        return(
-            f"Name:\n    {self.name}\n"
-        )
+        if args.verbose:
+            return(
+                f"Name:\n    {self.name}\n"
+            )
+        else:
+            return(
+                f"Name:\n    {get_post_slash(self.name)}\n"
+            )
 
 #class ArgumentInfo():
 #    def __init__(self, name, annotation, default = None):
