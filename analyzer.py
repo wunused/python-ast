@@ -70,31 +70,11 @@ class subAnalyzer(ast.NodeVisitor):
 
 def importInfoBuilder(analyzer, node):
     for alias in node.names:
-        if alias.name in sys.builtin_module_names or getattr(node, "module", None) in sys.builtin_module_names:
-            if hasattr(node, "module"):
-                print(f"Skipping {alias.name} object from built-in module {node.module}")
-                global_dictionary["from_builtins"][alias.name] = alias.name
-            else:
-                print(f"Skipping built-in module: {alias.name}")
-            continue
-        if is_jython_related(alias.name) or is_jython_related(getattr(node, "module", None)):
-            if hasattr(node, "module"):
-                print(f"Skipping Jython related object {alias.name} from module {node.module}")
-            else:
-                print(f"Skipping Jython related module: {alias.name}")
-            continue
-        if is_platform_specific_builtin(alias.name) or is_platform_specific_builtin(getattr(node, "module", None)):
-            if hasattr(node, "module"):
-                print(f"Skipping platform-specific built-in object {alias.name} from module {node.module}")
-            else:
-                print(f"Skipping platform-specific built-in module: {alias.name}")
-            continue
-            # would not be a bad idea to add a string of the description of each built-in to .imports
         upperImportInfo = importInfo(
-            alias.name,
-            getattr(alias, "asname", None),
-            getattr(node, "module", None),
-            analyzer.parentPath)
+                alias.name,
+                getattr(alias, "asname", None),
+                getattr(node, "module", None),
+                analyzer.parentPath)
         level.current_level().imports[upperImportInfo.name] = upperImportInfo
 
 def file_checker(moduleName, parentPath, tryNumber):
@@ -130,10 +110,17 @@ def getInheritance(node, classInstance):
             if classInstance not in global_dictionary["classes_inheriting_from_built-ins"]:
                 global_dictionary["classes_inheriting_from_built-ins"][classInstance.name] = classInstance
             continue
+        if fullName == None:
+            breakpoint()
+        module = fullName.split(".")[0]
+        this_level = level.current_level()
+        somebuiltin = False
         if "." not in fullName: # this means either the class was imported or was defined in the same module
-            this_level = level.current_level()
             while True:
                 if fullName in this_level.imports: #works because the keys dont have full path name since it belongs to that specific object
+                    if this_level.imports[module].builtin or this_level.imports[module].jython or this_level.imports[module].platform_specific:
+                        somebuiltin = True
+                        break
                     fullName = this_level.imports[fullName].module.name + "." + fullName
                     break
                 elif (this_level.name + "." + fullName) in this_level.classes:
@@ -144,11 +131,12 @@ def getInheritance(node, classInstance):
                     if this_level is None:
                         raise ValueError(f"Class {fullName} not found in imports or classes. Highest level reached: {level.current_level().name}.")
         else: # dot in fullName
-            module = fullName.split(".")[0]
-            this_level = level.current_level()
             # look in the imports with checking if module in imports
             while True:
                 if module in this_level.imports:
+                    if this_level.imports[module].builtin or this_level.imports[module].jython or this_level.imports[module].platform_specific:
+                        somebuiltin = True
+                        break
                     fullName = this_level.imports[module].module.name + "." + fullName.split(".")[1]
                     break
                 else:
@@ -159,16 +147,17 @@ def getInheritance(node, classInstance):
                             return classInstance
                         #breakpoint()
                         raise ValueError(f"Class {fullName} not found in imports.")
-        if fullName in global_dictionary["classes_dictionary"] and global_dictionary["classes_dictionary"][fullName].finished: # and not in some list of paused classes
-            get_inherited_objects(classInstance, fullName)
-        else:
-            classInstance.paused_objects.append(pausedObject(classInstance, fullName))
-            print(f"Pausing class {classInstance.name} for later resolution of {fullName}.")
-            if classInstance.name not in global_dictionary["paused_classes"]:
-                global_dictionary["paused_classes"][classInstance.name] = classInstance
-                classInstance.finished = False
-            # maybe put the 2 in a tuple
-            # logic that puts on hold; should take in classInstance and fullName
+        if somebuiltin:
+            classInstance.inherited_classes[fullName] = ClassInfo(fullName, builtin=True)
+        else:    
+            if fullName in global_dictionary["classes_dictionary"] and global_dictionary["classes_dictionary"][fullName].finished: # and not in some list of paused classes
+                get_inherited_objects(classInstance, fullName)
+            else:
+                classInstance.paused_objects.append(pausedObject(classInstance, fullName))
+                print(f"Pausing class {classInstance.name} for later resolution of {fullName}.")
+                if classInstance.name not in global_dictionary["paused_classes"]:
+                    global_dictionary["paused_classes"][classInstance.name] = classInstance
+                    classInstance.finished = False
     return classInstance
 
 def get_inherited_objects(classInstance, fullName):
@@ -177,7 +166,10 @@ def get_inherited_objects(classInstance, fullName):
         
     for k, v in global_dictionary["classes_dictionary"][fullName].inherited_classes.items():                
         classInstance.inherited_classes[k] = v
-        classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
+        if v.builtin or v.jython or v.platform_specific:
+            continue
+        else:
+            classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
 
 def asname_to_name(formerName):
     if level.current_level().imports:
@@ -194,6 +186,7 @@ def getFullName(base):
         return base.id
     if isinstance(base, ast.Attribute):
         return getFullName(base.value) + "." + base.attr
+    breakpoint()
     
 def get_post_slash(something):
     return something.split("/")[-1] if "/" in something else something
@@ -225,41 +218,58 @@ class importInfo():
     def __init__(self, name, asname, module, parentPath):
         self.name = name
         self.asname: str = asname
+        self.builtin = False
+        self.jython = False
+        self.platform_specific = False
         tryNumber = -1
         if module != None:
             self.type = "Object"
-            if "." in module:
-                module = module.replace(".", "/")
-                leading_slashes = 0
-                for c in module:
-                    if c == "/":
-                        leading_slashes += 1
-                    else:
-                        break
-                module = module[leading_slashes:]
-                if leading_slashes > 1:
-                    for _ in range(1, leading_slashes):
-                        parentPath = parentPath.parent
-            self.modulePath = file_checker(module, parentPath, tryNumber)
-            masterAnalyzer(self.modulePath)
-            self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
+            if module in sys.builtin_module_names:
+                self.builtin = True
+            elif is_platform_specific_builtin(module):
+                self.platform_specific = True
+            elif is_jython_related(module):
+                self.jython = True
+            else:
+                if "." in module:
+                    module = module.replace(".", "/")
+                    leading_slashes = 0
+                    for c in module:
+                        if c == "/":
+                            leading_slashes += 1
+                        else:
+                            break
+                    module = module[leading_slashes:]
+                    if leading_slashes > 1:
+                        for _ in range(1, leading_slashes):
+                            parentPath = parentPath.parent
+                self.modulePath = file_checker(module, parentPath, tryNumber)
+                masterAnalyzer(self.modulePath)
+                self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
         else:
             self.type = "Module"
-            if "." in name:
-                name = name.replace(".", "/")
-                leading_slashes = 0
-                for c in name:
-                    if c == "/":
-                        leading_slashes += 1
-                    else:
-                        break
-                name = name[leading_slashes:]
-                if leading_slashes > 1:
-                    for _ in range(1, leading_slashes):
-                        parentPath = parentPath.parent
-            self.modulePath = file_checker(name, parentPath, tryNumber)
-            masterAnalyzer(self.modulePath)
-            self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
+            if name in sys.builtin_module_names:
+                self.builtin = True
+            elif is_platform_specific_builtin(name):
+                self.platform_specific = True
+            elif is_jython_related(name):
+                self.jython = True
+            else:
+                if "." in name:
+                    name = name.replace(".", "/")
+                    leading_slashes = 0
+                    for c in name:
+                        if c == "/":
+                            leading_slashes += 1
+                        else:
+                            break
+                    name = name[leading_slashes:]
+                    if leading_slashes > 1:
+                        for _ in range(1, leading_slashes):
+                            parentPath = parentPath.parent
+                self.modulePath = file_checker(name, parentPath, tryNumber)
+                masterAnalyzer(self.modulePath)
+                self.module: moduleInfo = global_dictionary["modules_dictionary"][str(self.modulePath)]
 
     def __repr__(self):
         if args.verbose:
@@ -333,7 +343,7 @@ class moduleInfo(stackItem):
             )
 
 class ClassInfo(stackItem):
-    def __init__(self, name):
+    def __init__(self, name, builtin=False, jython=False, platform_specific=False):
         super().__init__()  # Call parent constructor
         self.name = name
         self.imports: dict[importInfo] = {}
@@ -345,6 +355,9 @@ class ClassInfo(stackItem):
         self.printableClassList = []
         self.functions_list = []
         self.inherited_functions_list = []
+        self.builtin = builtin
+        self.jython = jython
+        self.platform_specific = platform_specific
 
     def __repr__(self):
         if self.inherited_classes:
