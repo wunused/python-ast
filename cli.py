@@ -6,7 +6,8 @@ global_dictionary = {"packages_dictionary": {},
                     "modules_dictionary": {},
                     "classes_dictionary": {},
                     "functions_dictionary": {},
-                    "from_builtins": {}}
+                    "from_builtins": {},
+                    "paused_classes": {}}
 
 class levelStack():
     def __init__(self):
@@ -38,6 +39,27 @@ class levelStack():
             return None
 
 level = levelStack()
+
+class queue():
+    def __init__(self):
+        self.queue = []
+
+    def enqueue(self, item):
+        self.queue.append(item)
+
+    def dequeue(self):
+        if self.queue:
+            return self.queue.pop(0)
+        else:
+            raise IndexError("Queue is empty")
+
+    def size(self):
+        return len(self.queue)
+
+    def is_empty(self):
+        return len(self.queue) == 0
+
+paused_queue = queue()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file_name", help="analyzes inserted python file")

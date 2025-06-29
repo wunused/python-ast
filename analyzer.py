@@ -1,6 +1,6 @@
 import ast
 import cli
-from cli import args, global_dictionary, moduleName, parentPath
+from cli import args, global_dictionary, moduleName, parentPath, paused_queue
 from pathlib import Path
 import sys
 from cli import level
@@ -9,6 +9,11 @@ import builtins
 def main ():
     args
     masterAnalyzer(parentPath / moduleName)
+    
+    while global_dictionary["paused_classes"]:
+        for classInstance in global_dictionary["paused_classes"].values():
+            paused_resolver(classInstance)
+
     cli.main()
 
 def masterAnalyzer(modulePath):
@@ -19,6 +24,24 @@ def masterAnalyzer(modulePath):
     subAnalyzerInstance = subAnalyzer(modulePath)
     subAnalyzerInstance.visit(tree)
     level.pop()
+
+def paused_resolver(classInstance):
+    if classInstance.finished:
+        return
+    else:
+        for paused in classInstance.paused_objects:
+            inner_paused_resolver(paused, classInstance)
+        classInstance.finished = True
+        del global_dictionary["paused_classes"][classInstance.name]
+        # and then dequeues
+
+def inner_paused_resolver(paused, classInstance):
+    if global_dictionary["classes_dictionary"][paused.fullName].finished:
+        get_inherited_objects(paused.classInstance, paused.fullName)
+        classInstance.paused_objects.remove(paused)
+    else:
+        paused_resolver(global_dictionary["classes_dictionary"][paused.fullName])
+        inner_paused_resolver(paused, classInstance)
 
 class subAnalyzer(ast.NodeVisitor):
     def __init__(self, modulePath):
@@ -122,13 +145,24 @@ def getInheritance(node, classInstance):
         if fullName == "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/_collections_abc.py.MutableMapping":
             # maybe crashes because of double import? elsewhere, something imports and is returned and then goes on to analyze and it hasn't been analyzed yet?
             breakpoint()
-        classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
-        classInstance.inherited_functions_by_class[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
-        
-        for k, v in global_dictionary["classes_dictionary"][fullName].inherited_classes.items():
-            classInstance.inherited_classes[k] = v
-            classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
+        if fullName in global_dictionary["classes_dictionary"] and global_dictionary["classes_dictionary"][fullName].finished: # and not in some list of paused classes
+            get_inherited_objects(classInstance, fullName)
+        else:
+            classInstance.paused_objects.append(pausedObject(classInstance, fullName))
+            if classInstance.name not in global_dictionary["paused_classes"]:
+                global_dictionary["paused_classes"][classInstance.name] = classInstance
+                classInstance.finished = False
+            # maybe put the 2 in a tuple
+            # logic that puts on hold; should take in classInstance and fullName
     return classInstance
+
+def get_inherited_objects(classInstance, fullName):
+    classInstance.inherited_classes[fullName] = global_dictionary["classes_dictionary"][fullName]
+    classInstance.inherited_functions_by_class[f"Inherited from: {fullName}"] = global_dictionary["classes_dictionary"][fullName].functions
+        
+    for k, v in global_dictionary["classes_dictionary"][fullName].inherited_classes.items():                
+        classInstance.inherited_classes[k] = v
+        classInstance.inherited_functions_by_class[f"Inherited from: {k}"] = v.functions
 
 def asname_to_name(formerName):
     if level.current_level().imports:
@@ -161,9 +195,16 @@ def get_post_slash(something):
 #            level.current_level().arguments[innerArg.arg] = ArgumentInfo(innerArg.arg, getFullName(getattr(innerArg, "annotation", None)))
 #            j += 1
 
+class pausedObject():
+    def __init__(self, classInstance, fullName):
+        self.classInstance = classInstance
+        self.fullName = fullName
+        self.finished = False
+
 class stackItem():
     def __init__(self):
         self.parent
+        self.finished = True
 
 class importInfo():
     def __init__(self, name, asname, module, parentPath):
@@ -283,6 +324,7 @@ class ClassInfo(stackItem):
         self.inherited_classes: dict[ClassInfo] = {}
         self.functions: dict[FunctionInfo] = {}
         self.inherited_functions_by_class: dict[FunctionInfo] = {}
+        self.paused_objects: list[pausedObject] = []
         self.printableClassList = []
         self.functions_list = []
         self.inherited_functions_list = []
