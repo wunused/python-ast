@@ -7,8 +7,9 @@ global_dictionary = {"packages_dictionary": {},
                     "classes_dictionary": {},
                     "functions_dictionary": {},
                     "from_builtins": {},
-                    "paused_classes": {}}
-
+                    "paused_classes": {},
+                    "classes_inheriting_from_built-ins": {}
+                    }
 class levelStack():
     def __init__(self):
         self.stack = []

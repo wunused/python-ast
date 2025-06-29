@@ -9,11 +9,9 @@ import builtins
 def main ():
     args
     masterAnalyzer(parentPath / moduleName)
-    
     while global_dictionary["paused_classes"]:
         for classInstance in global_dictionary["paused_classes"].values():
             paused_resolver(classInstance)
-
     cli.main()
 
 def masterAnalyzer(modulePath):
@@ -33,7 +31,6 @@ def paused_resolver(classInstance):
             inner_paused_resolver(paused, classInstance)
         classInstance.finished = True
         del global_dictionary["paused_classes"][classInstance.name]
-        # and then dequeues
 
 def inner_paused_resolver(paused, classInstance):
     if global_dictionary["classes_dictionary"][paused.fullName].finished:
@@ -80,6 +77,19 @@ def importInfoBuilder(analyzer, node):
             else:
                 print(f"Skipping built-in module: {alias.name}")
             continue
+        if is_jython_related(alias.name) or is_jython_related(getattr(node, "module", None)):
+            if hasattr(node, "module"):
+                print(f"Skipping Jython related object {alias.name} from module {node.module}")
+            else:
+                print(f"Skipping Jython related module: {alias.name}")
+            continue
+        if is_platform_specific_builtin(alias.name) or is_platform_specific_builtin(getattr(node, "module", None)):
+            if hasattr(node, "module"):
+                print(f"Skipping platform-specific built-in object {alias.name} from module {node.module}")
+            else:
+                print(f"Skipping platform-specific built-in module: {alias.name}")
+            continue
+            # would not be a bad idea to add a string of the description of each built-in to .imports
         upperImportInfo = importInfo(
             alias.name,
             getattr(alias, "asname", None),
@@ -96,6 +106,7 @@ def file_checker(moduleName, parentPath, tryNumber):
         return package_constructor_path
     else:
         if tryNumber >= len(sys.path) - 1:
+            breakpoint()
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
         return file_checker(moduleName, sys.path[tryNumber], tryNumber)
@@ -113,8 +124,11 @@ def functionInfoBuilder(node):
 def getInheritance(node, classInstance):
     for base in node.bases:
         fullName = asname_to_name(getFullName(base))
-        if fullName in dir(builtins) or fullName in global_dictionary["from_builtins"]:
+        # has "fullName" but not the full path name
+        if fullName in dir(builtins) or fullName in global_dictionary["from_builtins"] or classInstance in global_dictionary["classes_inheriting_from_built-ins"]:
             print(f"Skipping built-in class: {fullName}")
+            if classInstance not in global_dictionary["classes_inheriting_from_built-ins"]:
+                global_dictionary["classes_inheriting_from_built-ins"][classInstance.name] = classInstance
             continue
         if "." not in fullName: # this means either the class was imported or was defined in the same module
             this_level = level.current_level()
@@ -140,15 +154,16 @@ def getInheritance(node, classInstance):
                 else:
                     this_level = this_level.parent
                     if this_level is None:
+                        if fullName in global_dictionary["classes_inheriting_from_built-ins"]:
+                            print(f"Skipping built-in class: {fullName}")
+                            return classInstance
+                        #breakpoint()
                         raise ValueError(f"Class {fullName} not found in imports.")
-        # if there is a dot, we know where it comes from, so we need to look in the imports for the full name (path) 
-        if fullName == "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/_collections_abc.py.MutableMapping":
-            # maybe crashes because of double import? elsewhere, something imports and is returned and then goes on to analyze and it hasn't been analyzed yet?
-            breakpoint()
         if fullName in global_dictionary["classes_dictionary"] and global_dictionary["classes_dictionary"][fullName].finished: # and not in some list of paused classes
             get_inherited_objects(classInstance, fullName)
         else:
             classInstance.paused_objects.append(pausedObject(classInstance, fullName))
+            print(f"Pausing class {classInstance.name} for later resolution of {fullName}.")
             if classInstance.name not in global_dictionary["paused_classes"]:
                 global_dictionary["paused_classes"][classInstance.name] = classInstance
                 classInstance.finished = False
@@ -203,7 +218,7 @@ class pausedObject():
 
 class stackItem():
     def __init__(self):
-        self.parent
+        self.parent = None
         self.finished = True
 
 class importInfo():
@@ -233,7 +248,7 @@ class importInfo():
             if "." in name:
                 name = name.replace(".", "/")
                 leading_slashes = 0
-                for c in module:
+                for c in name:
                     if c == "/":
                         leading_slashes += 1
                     else:
@@ -280,6 +295,7 @@ class packageInfo():
 
 class moduleInfo(stackItem):
     def __init__(self, name):
+        super().__init__()
         self.name: str = name # should change to be full path
         self.imports: dict[importInfo] = {}
         self.classes: dict = {}
@@ -318,6 +334,7 @@ class moduleInfo(stackItem):
 
 class ClassInfo(stackItem):
     def __init__(self, name):
+        super().__init__()  # Call parent constructor
         self.name = name
         self.imports: dict[importInfo] = {}
         self.classes: dict[ClassInfo] = {}
@@ -356,6 +373,7 @@ class ClassInfo(stackItem):
 
 class FunctionInfo(stackItem):
     def __init__(self, name, parent):
+        super().__init__()
         self.name = name
         self.classes: dict[ClassInfo] = {}
         self.functions: dict[FunctionInfo] = {}
@@ -388,6 +406,34 @@ class FunctionInfo(stackItem):
 #            f"Annotation = {self.annotation}\n"
 #            f"Default Value = {self.default}\n"
 #        )
+
+PLATFORM_SPECIFIC_BUILTINS = {
+    # Windows
+    '_winapi', 'msvcrt', 'winsound', '_msi',
+    # Unix/Linux/Mac  
+    '_posix', '_scproxy', 'grp', 'pwd', 'spwd',
+    # Add more as needed
+}
+
+def is_platform_specific_builtin(module_name):
+    return module_name in PLATFORM_SPECIFIC_BUILTINS
+
+JYTHON_PACKAGES = {
+    'org.python.core',
+    'org.python.util',
+    'org.python.modules',
+    'org.python.compiler',
+    'org.python.antlr',
+    'java.lang',
+    'java.util',
+    'java.io',
+    'javax.',
+    'com.sun.',
+    'com.oracle.'
+}
+
+def is_jython_related(module_name):
+    return module_name in JYTHON_PACKAGES
 
 if __name__ == '__main__':
     main()
