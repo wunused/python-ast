@@ -103,6 +103,8 @@ def functionInfoBuilder(node):
 
 def getInheritance(node, classInstance):
     for base in node.bases:
+        if isinstance(base, ast.Call):
+            breakpoint()
         fullName = asname_to_name(getFullName(base))
         # has "fullName" but not the full path name
         if fullName in dir(builtins) or fullName in global_dictionary["from_builtins"] or classInstance in global_dictionary["classes_inheriting_from_built-ins"]:
@@ -186,7 +188,8 @@ def getFullName(base):
         return base.id
     if isinstance(base, ast.Attribute):
         return getFullName(base.value) + "." + base.attr
-    breakpoint()
+    if isinstance(base, ast.Call):
+        breakpoint()
     
 def get_post_slash(something):
     return something.split("/")[-1] if "/" in something else something
