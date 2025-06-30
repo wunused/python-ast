@@ -1,9 +1,9 @@
 import ast
-import cli
-from cli import args, global_dictionary, moduleName, parentPath, paused_queue
+import complexCli
+from complexCli import args, global_dictionary, moduleName, parentPath, paused_queue
 from pathlib import Path
 import sys
-from cli import level
+from complexCli import level
 import builtins
 
 def main ():
@@ -12,7 +12,7 @@ def main ():
     while global_dictionary["paused_classes"]:
         for classInstance in global_dictionary["paused_classes"].values():
             paused_resolver(classInstance)
-    cli.main()
+    complexCli.main()
 
 def masterAnalyzer(modulePath):
     if str(modulePath) in global_dictionary["modules_dictionary"]:
