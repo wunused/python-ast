@@ -1,3 +1,33 @@
 # Test 1
 
 TODO: Describe what the expected output of the analyzer when run on this test.
+
+$ python3 analyzer.py -c lib.C tests/test1/lib.py
+Functions: ['lib.C.c_method1', 'lib.C.c_method2']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c lib.D tests/test1/lib.py
+Functions: ['lib.D.d_method1']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c newApp.pinho tests/test1/newApp.py
+Functions: ['newApp.pinho.p_method']
+Inherited Classes: ['lib.D']
+Inherited Functions: ['lib.D.d_method1']
+
+$ python3 analyzer.py -c app.A tests/test1/app.py
+Functions: ['app.A.a_method']
+Inherited Classes: ['lib.C']
+Inherited Functions: ['lib.C.c_method1', 'lib.C.c_method2']
+
+$ python3 analyzer.py -c app.B tests/test1/app.py
+Functions: ['app.B.b_method']
+Inherited Classes: ['newApp.pinho', 'lib.D']
+Inherited Functions: ['newApp.pinho.p_method', 'lib.D.d_method1']
+
+$ python3 analyzer.py -c app.new tests/test1/app.py
+Functions: ['app.new.main', 'app.new.new']
+Inherited Classes: ['app.B', 'newApp.pinho', 'lib.D']
+Inherited Functions: ['app.B.b_method', 'newApp.pinho.p_method', 'lib.D.d_method1']
