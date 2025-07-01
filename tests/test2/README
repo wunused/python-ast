@@ -1,1 +1,22 @@
 # Test 2
+
+Case: Inheriting from another file (multiple occurrences) and inheriting from same file
+*** Inheriting from same file doesn't work --> wild.py
+
+What the results should be...
+
+$ python3 analyzer.py -c animal.Animal tests/test2/animal.py
+Functions: ['animal.Animal.speak', 'animal.Animal.attack']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c wild.Animal tests/test2/wild.py
+Functions: ['wild.Animal.speak', 'wild.Animal.attack']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c wild.Feline tests/test2/wild.py
+Functions: ['wild.Feline.cleanliness']
+Inherited Classes: ['wild.Animal']
+Inherited Functions: ['wild.Animal.speak', 'wild.Animal.attack']
+
