@@ -1,3 +1,18 @@
 # Test 6
 
 Inheriting from multiple classes case
+
+$ python3 analyzer.py -c person.Person tests/test6/person.py
+Functions: ['person.Person.__init__', 'person.Person.display_person_info']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c employee.Employee tests/test6/employee.py
+Functions: ['employee.Employee.__init__', 'employee.Employee.display_employee_info']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c manager.Manager tests/test6/manager.py
+Functions: ['manager.Manager.__init__', 'manager.Manager.display_manager_info']
+Inherited Classes: ['person.Person', 'employee.Employee']
+Inherited Functions: ['person.Person.__init__', 'person.Person.display_person_info', 'employee.Employee.__init__', 'employee.Employee.display_employee_info']
