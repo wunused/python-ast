@@ -1,3 +1,13 @@
 # Test 5
 
 Checks results of overriding functions in inheriting class
+
+$ python3 analyzer.py -c overriding.FormalLanguage tests/test5/overriding.py
+Functions: ['overriding.FormalLanguage.speak']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c overriding2.Colloquial tests/test5/overriding2.py
+Functions: ['overriding2.Colloquial.speak']
+Inherited Classes: ['overriding.FormalLanguage']
+Inherited Functions: ['overriding.FormalLanguage.speak']
