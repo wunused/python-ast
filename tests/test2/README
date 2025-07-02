@@ -20,3 +20,12 @@ Functions: ['wild.Feline.cleanliness']
 Inherited Classes: ['wild.Animal']
 Inherited Functions: ['wild.Animal.speak', 'wild.Animal.attack']
 
+$ python3 analyzer.py -c pet.Dog tests/test2/pet.py
+Functions: ['pet.Dog.tricks']
+Inherited Classes: ['wild.Animal']
+Inherited Functions: ['wild.Animal.speak', 'wild.Animal.attack']
+
+$ python3 analyzer.py -c pet.Cat tests/test2/pet.py
+Functions: ['pet.Cat.naptime']
+Inherited Classes: ['wild.Feline', 'wild.Animal']
+Inherited Functions: ['wild.Feline.cleanliness', 'wild.Animal.speak', 'wild.Animal.attack']
