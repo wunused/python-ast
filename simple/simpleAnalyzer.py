@@ -60,8 +60,7 @@ class specificClass_visitor(ast.NodeVisitor):
             else:
                 module = node.module
                 parentPath = self.modulePath.parent
-                #if module == "lib":
-                #    breakpoint()
+                
             for alias in node.names:
                 main_alias_loop(module, parentPath, alias, self.className)
             # TODO: implement this to handle from imports
@@ -82,14 +81,10 @@ class specificClass_visitor(ast.NodeVisitor):
             self.found = True
             print(f"Found class: {node.name}")
             for base in node.bases:
-                #if base.id == "DEE":
-                #    breakpoint()
                 fullName = importFinder(self.modulePath, getFullName(base))
         else:
             self.visited_classes += 1
             if self.visited_classes == self.classNumber:
-                #if self.className == "DEE":
-                #    breakpoint()
                 self.importVisitor = self.import_visitor(self.modulePath, self.className)
                 self.importVisitor.visit(self.moduleTree)
             else:
@@ -98,10 +93,8 @@ class specificClass_visitor(ast.NodeVisitor):
         # first append to some list of inherited classes for this specific class
 
 def main_alias_loop(module, parentPath, alias, className):
-    #if module == "lib":
-    #    breakpoint()
     if getattr(alias, 'asname', None) == className:
-        specificClassPrinter(file_checker(module, parentPath, -1), alias.asname)
+        specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
     elif alias.name == className:
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
 
