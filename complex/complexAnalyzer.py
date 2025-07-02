@@ -1,9 +1,9 @@
 import ast
-import Task1.complex.complexCli as complexCli
-from Task1.complex.complexCli import args, global_dictionary, moduleName, parentPath, paused_queue
+import complexCli
+from complexCli import args, global_dictionary, moduleName, parentPath, paused_queue
 from pathlib import Path
 import sys
-from Task1.complex.complexCli import level
+from complexCli import level
 import builtins
 
 def main ():
