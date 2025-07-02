@@ -1,3 +1,18 @@
 # Test 4
 
 Checks that inheritance in single file works ** currently does not work
+
+$ python3 analyzer.py -c hierarchy.Animal tests/test4/hierarchy.py
+Functions: ['hierarchy.Animal.eat']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c hierarchy.Mammal tests/test4/hierarchy.py
+Functions: ['hierarchy.Mammal.walk']
+Inherited Classes: ['hierarchy.Animal']
+Inherited Functions: ['hierarchy.Animal.eat']
+
+$ python3 analyzer.py -c hierarchy.Human tests/test4/hierarchy.py
+Functions: ['hierarchy.Human.speak']
+Inherited Classes: ['hierarchy.Mammal', 'hierarchy.Animal']
+Inherited Functions: ['hierarchy.Mammal.walk', 'hierarchy.Animal.eat']
