@@ -1,4 +1,6 @@
-class italian:
+from latin import latin
+
+class italian(latin):
     def language(self):
         pass
     def iquirks(self):
