@@ -1,1 +1,9 @@
-# Django test
+# Django (tutorial) test case
+
+Imports Django, django.db --> inherit from models.Model
+Test django-import/djangotutorial/polls/models.py for installed package inheritance case
+
+Output:
+    Recognize that the Question and Choice classes inherit from models.Model
+    Recognize that the Question and Choice classes inherit the models.Model
+    methods.
