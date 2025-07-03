@@ -1,8 +1,7 @@
-import italian as i
+import italian
 from french import french
-from protogermanic import protogermanic as pg
 
-class english(pg, i.italian, french):
+class english(french, italian.italian):
     def language():
         pass
     def equirks():
