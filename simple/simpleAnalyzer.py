@@ -30,6 +30,33 @@ def specificClassPrinter(modulePath, className):
     visitor = specificClass_visitor(modulePath, className, moduleTree)
     visitor.visit(moduleTree)
 
+class import_visitor(ast.NodeVisitor):
+    # this is where we will go to a new module
+    def __init__(self, modulePath, className, moduleName=None):
+        self.modulePath = modulePath
+        self.className = className
+        self.moduleName = moduleName
+
+    def visit_Import(self, node):
+        if self.moduleName is None:
+            return
+        for alias in node.names:
+            if "." in alias.name:
+                module, parentPath = resolve_path(alias.name, self.modulePath.parent)
+            else:
+                module = alias.name
+                parentPath = self.modulePath.parent
+            import_alias_loop(module, parentPath, alias, self.className, self.moduleName)
+
+    def visit_ImportFrom(self, node):
+        if "." in node.module:
+            module, parentPath = resolve_path(node.module, self.modulePath.parent)
+        else:
+            module = node.module
+            parentPath = self.modulePath.parent
+        for alias in node.names:
+            importFrom_alias_loop(module, parentPath, alias, self.className)
+
 class specificClass_visitor(ast.NodeVisitor):
     class ClassCounter(ast.NodeVisitor):
         def __init__(self):
@@ -38,32 +65,6 @@ class specificClass_visitor(ast.NodeVisitor):
         def visit_ClassDef(self, node):
             self.classNumber += 1
             self.generic_visit(node)
-            
-    class import_visitor(ast.NodeVisitor):
-        # this is where we will go to a new module
-        def __init__(self, modulePath, className):
-            self.modulePath = modulePath
-            self.className = className
-            self.imports = {}
-        
-        def visit_Import(self, node):
-            for alias in node.names:
-                if "." in alias.name:
-                    module, parentPath = resolve_path(alias.name, self.modulePath.parent)
-                else:
-                    module = alias.name
-                    parentPath = self.modulePath.parent
-                main_alias_loop(module, parentPath, alias, self.className)
-        def visit_ImportFrom(self, node):
-            if "." in node.module:
-                module, parentPath = resolve_path(node.module, self.modulePath.parent)
-            else:
-                module = node.module
-                parentPath = self.modulePath.parent
-                
-            for alias in node.names:
-                main_alias_loop(module, parentPath, alias, self.className)
-            # TODO: implement this to handle from imports
 
     def __init__(self, modulePath, className, moduleTree):
         self.classCounter = self.ClassCounter()
@@ -77,33 +78,51 @@ class specificClass_visitor(ast.NodeVisitor):
         self.found = False
 
     def visit_ClassDef(self, node):
+        #if self.className == "Tag" and node.name == "Tag":
+        #    breakpoint()
         if node.name == self.className:
             self.found = True
             print(f"Found class: {node.name}")
             for base in node.bases:
-                fullName = importFinder(self.modulePath, getFullName(base))
+                import_DFS_tree(self.modulePath, getFullName(base))
         else:
             self.visited_classes += 1
             if self.visited_classes == self.classNumber:
-                self.importVisitor = self.import_visitor(self.modulePath, self.className)
+                self.importVisitor = import_visitor(self.modulePath, self.className)
                 self.importVisitor.visit(self.moduleTree)
             else:
                 self.generic_visit(node)
         # by here should have already finished the dependency tree for fullName
         # first append to some list of inherited classes for this specific class
 
-def main_alias_loop(module, parentPath, alias, className):
+def import_alias_loop(module, parentPath, alias, className, moduleName):
+    if getattr(alias, 'asname', None) == moduleName:
+        specificClassPrinter(file_checker(module, parentPath, -1), className)
+    elif alias.name == moduleName:
+        specificClassPrinter(file_checker(module, parentPath, -1), className)
+
+def importFrom_alias_loop(module, parentPath, alias, className):
     if getattr(alias, 'asname', None) == className:
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
     elif alias.name == className:
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
 
-def importFinder(modulePath, formerName):
-    if "." in formerName: # has no asname
-        new_modulePath, className = resolve_path(formerName.rsplit(".", 1)[0] , formerName.split(".")[-1])
-        new_modulePath = modulePath / new_modulePath        
-        return specificClassPrinter(new_modulePath / className)
-    else:
+def classFinder(modulePath, className):
+    with open(modulePath, "r") as module:
+        moduleTree = ast.parse(module.read())
+    visitor = import_visitor(modulePath, className)
+    visitor.visit(moduleTree)
+
+def import_DFS_tree(modulePath, formerName):
+    if "." in formerName: # has no asname; class is defined in a different module
+        # the actual module could have an asname
+        className = formerName.rsplit(".", 1)[-1]
+        # we want to find the import statement and go into the module
+        # you already have the module name or asname
+        return classFinder(modulePath, className)
+        # at this point we just wanna jump into a new module!!
+        # how do we check if module is name or asname?
+    else: # could have an asname; class could be defined in the same module or different one
         return specificClassPrinter(modulePath, formerName)
 
 def resolve_path(module, parentPath):
@@ -128,6 +147,7 @@ def getFullName(base):
     if isinstance(base, ast.Call):
         breakpoint()
 
+# returns a full path
 def file_checker(moduleName, parentPath, tryNumber):
     file_path = parentPath / Path(moduleName + ".py")
     package_constructor_path = parentPath / Path(moduleName + "/__init__.py")
