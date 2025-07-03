@@ -1,1 +1,23 @@
 # Test 7
+
+Two parent classes have same parent
+
+$ python3 analyzer.py -c protogermanic.protogermanic tests/test7/protogermanic.py
+Functions: ['protogermanic.protogermanic.language', 'protogermanic.protogermanic.pgquirks']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c french.french tests/test7/french.py
+Functions: ['french.french.language', 'french.french.fquirks']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c italian.italian tests/test7/italian.py
+Functions: ['italian.italian.language', 'italian.italian.iquirks']
+Inherited Classes: []
+Inherited Functions: []
+
+$ python3 analyzer.py -c english.english tests/test7/english.py
+Functions: ['english.english.language', 'english.english.equirks']
+Inherited Classes: ['italian.italian', 'french.french', 'protogermanic.protogermanic']
+Inherited Functions: []
