@@ -3,6 +3,7 @@ from simpleCli import args, moduleName, parentPath, classlist, level
 from pathlib import Path
 import sys
 import builtins
+from anytree import Node, RenderTree
 
 def main ():
     args
@@ -11,6 +12,8 @@ def main ():
         fileClassesPrinter(parentPath / moduleName)
     else:
         specificClassPrinter(parentPath / moduleName, args.class_name)
+        for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
+            print(f"{pre}{node.name}")
 
 def fileClassesPrinter(modulePath):
     with open(modulePath, "r") as module:
@@ -90,11 +93,12 @@ class specificClass_visitor(ast.NodeVisitor):
                 level.previous_level().inherited_classes.append(level.current_level())
             print(f"Found class: {node.name} in {self.modulePath}")
             for base in node.bases:
-                if base.id in dir(builtins):
+                if getFullName(base) in dir(builtins):
                     level.current_level().inherited_classes.append(ClassObject(base.id))
-                    print(f"Skipping built-in inherited class: {base.id}")
+                    #print(f"Skipping built-in inherited class: {base.id}")
                     continue
                 import_DFS_tree(self.modulePath, getFullName(base))
+                #evel.pop()
             functionFinder = self.FunctionFinder(level.current_level())
             functionFinder.visit(node)
             for classObject in level.current_level().inherited_classes:
@@ -102,6 +106,7 @@ class specificClass_visitor(ast.NodeVisitor):
                 for k, v in classObject.inherited_functions.items():
                     if k not in level.current_level().inherited_functions:
                         level.current_level().inherited_functions[k] = v
+            
             level.pop()
         else:
             self.visited_classes += 1
@@ -125,19 +130,20 @@ def importFrom_alias_loop(module, parentPath, alias, className):
     elif alias.name == className:
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
 
-def classFinder(modulePath, className):
+def classFinder(modulePath, className, moduleName):
     with open(modulePath, "r") as module:
         moduleTree = ast.parse(module.read())
-    visitor = import_visitor(modulePath, className)
+    visitor = import_visitor(modulePath, className, moduleName)
     visitor.visit(moduleTree)
 
 def import_DFS_tree(modulePath, formerName):
     if "." in formerName: # has no asname; class is defined in a different module
         # the actual module could have an asname
         className = formerName.rsplit(".", 1)[-1]
+        moduleName = formerName.rsplit(".", 1)[0]
         # we want to find the import statement and go into the module
         # you already have the module name or asname
-        return classFinder(modulePath, className)
+        return classFinder(modulePath, className, moduleName)
         # at this point we just wanna jump into a new module!!
         # how do we check if module is name or asname?
     else: # could have an asname; class could be defined in the same module or different one
@@ -180,9 +186,16 @@ def file_checker(moduleName, parentPath, tryNumber):
         tryNumber += 1
         return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
+def treeBuilder(classObject, parent=None):
+    label = f"{classObject.name} ({classObject.module.name if hasattr(classObject.module, 'name') else classObject.module})"
+    current_node = Node(label, parent=parent)
+    for inherited_class in classObject.inherited_classes:
+        treeBuilder(inherited_class, parent=current_node)
+    return current_node
+
 # Objects:
 
-class ClassObject:
+class ClassObject():
     def __init__(self, name, module=None):
         self.name = name
         self.module = module
@@ -196,7 +209,7 @@ class ClassObject:
     def __repr__(self):
         return f"ClassObject(name={self.name}, inherited_classes={self.inherited_classes})\n{self.functions})\n"
 
-class FunctionObject:
+class FunctionObject():
     def __init__(self, name):
         self.name = name
 
