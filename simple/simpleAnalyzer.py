@@ -10,17 +10,25 @@ def main ():
     non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False)}
     if not non_file_name_args or non_file_name_args == {'verbose': True}:
         fileClassesPrinter(parentPath / moduleName)
-    else:
+        print(f"Classes in {parentPath / moduleName}:")
+        for className in classlist:
+            print(className)
+    elif args.class_name:
         specificClassPrinter(parentPath / moduleName, args.class_name)
         for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
             print(f"{pre}{node.name}")
+    else:
+        fileClassesPrinter(parentPath / moduleName)
+        for className in classlist:
+            specificClassPrinter(parentPath / moduleName, className)
+            for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
+                print(f"{pre}{node.name}")
 
 def fileClassesPrinter(modulePath):
     with open(modulePath, "r") as module:
         moduleTree = ast.parse(module.read())
     visitor = moduleClassesPrinter_visitor()
     visitor.visit(moduleTree)
-    print(f"Classes in {modulePath}:\n{classlist}")
 
 class moduleClassesPrinter_visitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
@@ -91,14 +99,12 @@ class specificClass_visitor(ast.NodeVisitor):
             level.push(ClassObject(node.name, self.modulePath))  # Push the class name onto the level stack
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
-            print(f"Found class: {node.name} in {self.modulePath}")
+            #print(f"Found class: {node.name} in {self.modulePath}")
             for base in node.bases:
                 if getFullName(base) in dir(builtins):
                     level.current_level().inherited_classes.append(ClassObject(base.id))
-                    #print(f"Skipping built-in inherited class: {base.id}")
                     continue
                 import_DFS_tree(self.modulePath, getFullName(base))
-                #evel.pop()
             functionFinder = self.FunctionFinder(level.current_level())
             functionFinder.visit(node)
             for classObject in level.current_level().inherited_classes:
@@ -187,11 +193,25 @@ def file_checker(moduleName, parentPath, tryNumber):
         return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
 def treeBuilder(classObject, parent=None):
-    label = f"{classObject.name} ({classObject.module.name if hasattr(classObject.module, 'name') else classObject.module})"
-    current_node = Node(label, parent=parent)
-    for inherited_class in classObject.inherited_classes:
-        treeBuilder(inherited_class, parent=current_node)
-    return current_node
+    if args.path_viewer:
+        # If path_viewer is enabled, show the full module path for each class
+        label = f"{classObject.name} ({classObject.module})"
+    else:
+        label = f"{classObject.name} ({classObject.module.name if hasattr(classObject.module, 'name') else classObject.module})"
+    classNode = Node(label, parent=parent)
+    if args.function_viewer:
+        if classObject.functions:
+            funcNode = Node("Functions", parent=classNode)
+            for func in classObject.functions:
+                Node(func.name, parent=funcNode)
+        if classObject.inherited_classes:
+            inherited_classesNode = Node("Inherited Classes", parent=classNode)
+            for inherited_class in classObject.inherited_classes:
+                treeBuilder(inherited_class, parent=inherited_classesNode)
+    else:
+        for inherited_class in classObject.inherited_classes:
+                treeBuilder(inherited_class, parent=classNode)
+    return classNode
 
 # Objects:
 
