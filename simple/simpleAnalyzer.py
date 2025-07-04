@@ -42,7 +42,6 @@ def specificClassPrinter(modulePath, className):
     visitor.visit(moduleTree)
 
 class import_visitor(ast.NodeVisitor):
-    # this is where we will go to a new module
     def __init__(self, modulePath, className, moduleName=None):
         self.modulePath = modulePath
         self.className = className
@@ -96,10 +95,9 @@ class specificClass_visitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node):
         if node.name == self.className:
-            level.push(ClassObject(node.name, self.modulePath))  # Push the class name onto the level stack
+            level.push(ClassObject(node.name, self.modulePath))
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
-            #print(f"Found class: {node.name} in {self.modulePath}")
             for base in node.bases:
                 if getFullName(base) in dir(builtins):
                     level.current_level().inherited_classes.append(ClassObject(base.id))
@@ -121,8 +119,6 @@ class specificClass_visitor(ast.NodeVisitor):
                 self.importVisitor.visit(self.moduleTree)
             else:
                 self.generic_visit(node)
-        # by here should have already finished the dependency tree for fullName
-        # first append to some list of inherited classes for this specific class
 
 def import_alias_loop(module, parentPath, alias, className, moduleName):
     if getattr(alias, 'asname', None) == moduleName:
@@ -143,16 +139,11 @@ def classFinder(modulePath, className, moduleName):
     visitor.visit(moduleTree)
 
 def import_DFS_tree(modulePath, formerName):
-    if "." in formerName: # has no asname; class is defined in a different module
-        # the actual module could have an asname
+    if "." in formerName:
         className = formerName.rsplit(".", 1)[-1]
         moduleName = formerName.rsplit(".", 1)[0]
-        # we want to find the import statement and go into the module
-        # you already have the module name or asname
         return classFinder(modulePath, className, moduleName)
-        # at this point we just wanna jump into a new module!!
-        # how do we check if module is name or asname?
-    else: # could have an asname; class could be defined in the same module or different one
+    else:
         return specificClassPrinter(modulePath, formerName)
 
 def resolve_path(module, parentPath):
@@ -177,7 +168,6 @@ def getFullName(base):
     if isinstance(base, ast.Call):
         breakpoint()
 
-# returns a full path
 def file_checker(moduleName, parentPath, tryNumber):
     file_path = parentPath / Path(moduleName + ".py")
     package_constructor_path = parentPath / Path(moduleName + "/__init__.py")
@@ -212,8 +202,6 @@ def treeBuilder(classObject, parent=None):
         for inherited_class in classObject.inherited_classes:
                 treeBuilder(inherited_class, parent=classNode)
     return classNode
-
-# Objects:
 
 class ClassObject():
     def __init__(self, name, module=None):
