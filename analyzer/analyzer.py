@@ -1,5 +1,5 @@
 import ast
-from simpleCli import args, moduleName, parentPath, classlist, level
+from cli import args, moduleName, parentPath, classlist, level
 from pathlib import Path
 import sys
 import builtins

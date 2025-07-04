@@ -1,5 +1,4 @@
 import argparse
-from pprint import pprint
 from pathlib import Path
 
 classlist = []
@@ -40,7 +39,7 @@ level = levelStack()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file_name", help="analyzes inserted python file")
-parser.add_argument("-c", "--class_name", help="provides details for a class | Usage: module.class")
+parser.add_argument("-c", "--class_name", help="provides class inheritance tree for a specific class")
 parser.add_argument("-f", "--function_viewer", action="store_true", help="shows functions in a class")
 parser.add_argument("-p", "--path_viewer", action="store_true", help="shows full module path for each class")
 parser.add_argument("-a", "--all_classes", action="store_true", help="shows details for all classes in a module")
