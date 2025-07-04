@@ -1,5 +1,5 @@
 import ast
-from simpleCli import args, moduleName, parentPath, classlist
+from simpleCli import args, moduleName, parentPath, classlist, level
 from pathlib import Path
 import sys
 import builtins
@@ -65,6 +65,13 @@ class specificClass_visitor(ast.NodeVisitor):
         def visit_ClassDef(self, node):
             self.classNumber += 1
             self.generic_visit(node)
+    class FunctionFinder(ast.NodeVisitor):
+        def __init__(self, classObject):
+            self.classObject = classObject
+
+        def visit_FunctionDef(self, node):
+            self.classObject.functions.append(FunctionObject(node.name))
+            self.generic_visit(node)
 
     def __init__(self, modulePath, className, moduleTree):
         self.classCounter = self.ClassCounter()
@@ -75,16 +82,27 @@ class specificClass_visitor(ast.NodeVisitor):
         self.parentPath = modulePath.parent
         self.modulePath = modulePath
         self.className = className
-        self.found = False
 
     def visit_ClassDef(self, node):
-        #if self.className == "Tag" and node.name == "Tag":
-        #    breakpoint()
         if node.name == self.className:
-            self.found = True
-            print(f"Found class: {node.name}")
+            level.push(ClassObject(node.name, self.modulePath))  # Push the class name onto the level stack
+            if level.previous_level():
+                level.previous_level().inherited_classes.append(level.current_level())
+            print(f"Found class: {node.name} in {self.modulePath}")
             for base in node.bases:
+                if base.id in dir(builtins):
+                    level.current_level().inherited_classes.append(ClassObject(base.id))
+                    print(f"Skipping built-in inherited class: {base.id}")
+                    continue
                 import_DFS_tree(self.modulePath, getFullName(base))
+            functionFinder = self.FunctionFinder(level.current_level())
+            functionFinder.visit(node)
+            for classObject in level.current_level().inherited_classes:
+                level.current_level().inherited_functions[classObject.name] = classObject.functions
+                for k, v in classObject.inherited_functions.items():
+                    if k not in level.current_level().inherited_functions:
+                        level.current_level().inherited_functions[k] = v
+            level.pop()
         else:
             self.visited_classes += 1
             if self.visited_classes == self.classNumber:
@@ -161,6 +179,29 @@ def file_checker(moduleName, parentPath, tryNumber):
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
         return file_checker(moduleName, sys.path[tryNumber], tryNumber)
+
+# Objects:
+
+class ClassObject:
+    def __init__(self, name, module=None):
+        self.name = name
+        self.module = module
+        if module is None:
+            self.module = "builtins"
+        self.inherited_classes: list[ClassObject] = [] # or dictionary
+        self.functions: list[FunctionObject] = []
+        self.inherited_functions: dict[FunctionObject] = {}  # or dictionary
+        self.all_functions: list[FunctionObject] = []  # all functions including inherited ones
+
+    def __repr__(self):
+        return f"ClassObject(name={self.name}, inherited_classes={self.inherited_classes})\n{self.functions})\n"
+
+class FunctionObject:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
 
 PLATFORM_SPECIFIC_BUILTINS = {
     # Windows
