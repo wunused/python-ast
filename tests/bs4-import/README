@@ -1,0 +1,7 @@
+# BeatifulSoup test
+
+Input: UglySoup
+Output:
+    Recognize that the UglySoup class inherits from bs4.BeautifulSoup
+    Recognize that the UglySoup inherited methods are the bs4.BeautifulSoup
+    methods.
