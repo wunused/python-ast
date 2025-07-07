@@ -202,7 +202,7 @@ def treeBuilder(classObject, parent=None):
                 treeBuilder(inherited_class, parent=inherited_classesNode)
     else:
         for inherited_class in classObject.inherited_classes:
-                treeBuilder(inherited_class, parent=classNode)
+            treeBuilder(inherited_class, parent=classNode)
     return classNode
 
 class ClassObject():
