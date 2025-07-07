@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import ast
 from cli import args, moduleName, parentPath, classlist, level
 from pathlib import Path
