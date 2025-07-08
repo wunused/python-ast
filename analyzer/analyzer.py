@@ -9,7 +9,6 @@ from pathlib import Path
 import sys
 import builtins
 from anytree import Node, RenderTree
-from pprint import pprint
 
 def main ():
     args
@@ -198,9 +197,9 @@ def file_checker(moduleName, parentPath, tryNumber):
             breakpoint()
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
-        if args.v:
+        if args.venv:
             if Path(sys.path[tryNumber]).name == "site-packages":
-                venvPath = args.v / "/".join(Path(sys.path[tryNumber]).parts[-3:])
+                venvPath = args.venv / "/".join(Path(sys.path[tryNumber]).parts[-3:])
                 return file_checker(moduleName, venvPath, tryNumber)
             else:
                 return file_checker(moduleName, sys.path[tryNumber], tryNumber)
