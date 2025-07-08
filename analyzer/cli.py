@@ -42,7 +42,7 @@ parser.add_argument("-c", "--class_name", help="provides class inheritance tree 
 parser.add_argument("-f", "--function_viewer", action="store_true", help="shows functions in a class")
 parser.add_argument("-p", "--path_viewer", action="store_true", help="shows full module path for each class")
 parser.add_argument("-a", "--all_classes", action="store_true", help="shows details for all classes in a module")
-parser.add_argument("-v", "-venv", help="allows for virtual environment analysis—no activation needed")
+parser.add_argument("-venv", help="allows for virtual environment analysis—no activation needed")
 
 args = parser.parse_args()
 def relative_resolver(arg):
@@ -56,6 +56,6 @@ def relative_resolver(arg):
     moduleName = filePath.name
     return parentPath, moduleName
 file_name_parentPath, file_name_moduleName = relative_resolver(args.file_name)
-if args.v:
-    v_parentPath, v_moduleName = relative_resolver(args.v)
-    args.v = v_parentPath / v_moduleName
+if args.venv:
+    v_parentPath, v_moduleName = relative_resolver(args.venv)
+    args.venv = v_parentPath / v_moduleName
