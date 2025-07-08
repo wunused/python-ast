@@ -6,7 +6,7 @@ try:
 except:
     raise FileNotFoundError("Insert a valid path")
 if args.v:
-    from cli import v_parentPath
+    from cli import venvPath
 from pathlib import Path
 import sys
 import builtins
@@ -14,7 +14,7 @@ from anytree import Node, RenderTree
 
 def main ():
     args
-    non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False) and k != "venv"}
+    non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False) and k != "v"}
     if not non_file_name_args or non_file_name_args == {'verbose': True}:
         fileClassesPrinter(file_name_parentPath / file_name_moduleName)
         print(f"Classes in {file_name_parentPath / file_name_moduleName}:")
@@ -22,12 +22,14 @@ def main ():
             print(className)
     elif args.class_name:
         specificClassPrinter(file_name_parentPath / file_name_moduleName, args.class_name)
+        #breakpoint()
         for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
             print(f"{pre}{node.name}")
     else:
         fileClassesPrinter(file_name_parentPath / file_name_moduleName)
         for className in classlist:
             specificClassPrinter(file_name_parentPath / file_name_moduleName, className)
+            #breakpoint()
             for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
                 print(f"{pre}{node.name}")
 
@@ -112,7 +114,9 @@ class specificClass_visitor(ast.NodeVisitor):
             level.push(ClassObject(node.name, self.modulePath))
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
+                #print(f"appended {level.current_level().name} to {level.previous_level().name}")
             for base in node.bases:
+                
                 if getFullName(base) in dir(builtins):
                     level.current_level().inherited_classes.append(ClassObject(base.id))
                     continue
@@ -124,7 +128,7 @@ class specificClass_visitor(ast.NodeVisitor):
                 for k, v in classObject.inherited_functions.items():
                     if k not in level.current_level().inherited_functions:
                         level.current_level().inherited_functions[k] = v
-            level.pop()
+            #print(f"popped {level.pop().name}; current level is now {level.current_level().name}")
         else:
             self.visited_classes += 1
             if self.visited_classes == self.classNumber:
@@ -182,8 +186,16 @@ def getFullName(base):
         breakpoint()
 
 def file_checker(moduleName, parentPath, tryNumber):
+    """"
+    parentPath is the path to where the import statement to moduleName was found
+    checks if there exists in the sam directory the module or a package with the name of the module
+    
+    if not in the parentPath, it recursively goes through sys.path to check if it's there
+    """
     file_path = parentPath / Path(moduleName + ".py")
     package_constructor_path = parentPath / Path(moduleName + "/__init__.py")
+    #if package_constructor_path == venvPath / "lib/python3.11/site-packages" / Path(moduleName + "/__init__.py"):
+    #    breakpoint()
     if file_path.exists():
         return file_path
     elif package_constructor_path.exists():
@@ -193,8 +205,9 @@ def file_checker(moduleName, parentPath, tryNumber):
             breakpoint()
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
+        # make it so it doesnt assume that site-packages is at the end
         if args.v:
-            return file_checker(moduleName, sys.path[tryNumber], tryNumber) if tryNumber != len(sys.path) - 1 else file_checker(moduleName, v_parentPath, tryNumber)
+            return file_checker(moduleName, sys.path[tryNumber], tryNumber) if Path(sys.path[tryNumber]).name != "site-packages" else file_checker(moduleName, venvPath / "lib/python3.11/site-packages", tryNumber)
         else:
             return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
@@ -216,6 +229,7 @@ def treeBuilder(classObject, parent=None):
                 treeBuilder(inherited_class, parent=inherited_classesNode)
     else:
         for inherited_class in classObject.inherited_classes:
+            #breakpoint()
             treeBuilder(inherited_class, parent=classNode)
     return classNode
 
@@ -225,10 +239,10 @@ class ClassObject():
         self.module = module
         if module is None:
             self.module = "builtins"
-        self.inherited_classes: list[ClassObject] = [] # or dictionary
+        self.inherited_classes: list[ClassObject] = []
         self.functions: list[FunctionObject] = []
-        self.inherited_functions: dict[FunctionObject] = {}  # or dictionary
-        self.all_functions: list[FunctionObject] = []  # all functions including inherited ones
+        self.inherited_functions: dict[FunctionObject] = {}
+        self.all_functions: list[FunctionObject] = []
 
     def __repr__(self):
         return f"ClassObject(name={self.name}, inherited_classes={self.inherited_classes})\n{self.functions})\n"
