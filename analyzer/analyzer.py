@@ -2,9 +2,11 @@
 
 import ast
 try:
-    from cli import args, moduleName, parentPath, classlist, level
+    from cli import args, file_name_parentPath, file_name_moduleName, classlist, level
 except:
     raise FileNotFoundError("Insert a valid path")
+if args.v:
+    from cli import v_parentPath
 from pathlib import Path
 import sys
 import builtins
@@ -12,20 +14,20 @@ from anytree import Node, RenderTree
 
 def main ():
     args
-    non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False)}
+    non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False) and k != "venv"}
     if not non_file_name_args or non_file_name_args == {'verbose': True}:
-        fileClassesPrinter(parentPath / moduleName)
-        print(f"Classes in {parentPath / moduleName}:")
+        fileClassesPrinter(file_name_parentPath / file_name_moduleName)
+        print(f"Classes in {file_name_parentPath / file_name_moduleName}:")
         for className in classlist:
             print(className)
     elif args.class_name:
-        specificClassPrinter(parentPath / moduleName, args.class_name)
+        specificClassPrinter(file_name_parentPath / file_name_moduleName, args.class_name)
         for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
             print(f"{pre}{node.name}")
     else:
-        fileClassesPrinter(parentPath / moduleName)
+        fileClassesPrinter(file_name_parentPath / file_name_moduleName)
         for className in classlist:
-            specificClassPrinter(parentPath / moduleName, className)
+            specificClassPrinter(file_name_parentPath / file_name_moduleName, className)
             for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
                 print(f"{pre}{node.name}")
 
@@ -191,7 +193,10 @@ def file_checker(moduleName, parentPath, tryNumber):
             breakpoint()
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
-        return file_checker(moduleName, sys.path[tryNumber], tryNumber)
+        if args.v:
+            return file_checker(moduleName, sys.path[tryNumber], tryNumber) if tryNumber != len(sys.path) - 1 else file_checker(moduleName, v_parentPath, tryNumber)
+        else:
+            return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
 def treeBuilder(classObject, parent=None):
     if args.path_viewer:
