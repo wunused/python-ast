@@ -22,14 +22,12 @@ def main ():
             print(className)
     elif args.class_name:
         specificClassPrinter(file_name_parentPath / file_name_moduleName, args.class_name)
-        #breakpoint()
         for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
             print(f"{pre}{node.name}")
     else:
         fileClassesPrinter(file_name_parentPath / file_name_moduleName)
         for className in classlist:
             specificClassPrinter(file_name_parentPath / file_name_moduleName, className)
-            #breakpoint()
             for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
                 print(f"{pre}{node.name}")
 
@@ -109,14 +107,13 @@ class specificClass_visitor(ast.NodeVisitor):
         self.class_found = False
 
     def visit_ClassDef(self, node):
+        self.class_found = True
         if node.name == self.className:
-            self.class_found = True
             level.push(ClassObject(node.name, self.modulePath))
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
                 #print(f"appended {level.current_level().name} to {level.previous_level().name}")
             for base in node.bases:
-                
                 if getFullName(base) in dir(builtins):
                     level.current_level().inherited_classes.append(ClassObject(base.id))
                     continue
@@ -128,6 +125,7 @@ class specificClass_visitor(ast.NodeVisitor):
                 for k, v in classObject.inherited_functions.items():
                     if k not in level.current_level().inherited_functions:
                         level.current_level().inherited_functions[k] = v
+            level.pop()
             #print(f"popped {level.pop().name}; current level is now {level.current_level().name}")
         else:
             self.visited_classes += 1
