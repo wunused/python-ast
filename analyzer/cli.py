@@ -28,7 +28,6 @@ class levelStack():
             return self.stack[-1]
         else:
             return None
-    # create a function to get the previous level recursively without popping it
     def previous_level(self):
         if len(self.stack) > 1:
             return self.stack[-2]
@@ -59,3 +58,4 @@ def relative_resolver(arg):
 file_name_parentPath, file_name_moduleName = relative_resolver(args.file_name)
 if args.v:
     v_parentPath, v_moduleName = relative_resolver(args.v)
+    venvPath = v_parentPath / v_moduleName
