@@ -5,12 +5,11 @@ try:
     from cli import args, file_name_parentPath, file_name_moduleName, classlist, level
 except:
     raise FileNotFoundError("Insert a valid path")
-if args.v:
-    from cli import venvPath
 from pathlib import Path
 import sys
 import builtins
 from anytree import Node, RenderTree
+from pprint import pprint
 
 def main ():
     args
@@ -112,7 +111,6 @@ class specificClass_visitor(ast.NodeVisitor):
             level.push(ClassObject(node.name, self.modulePath))
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
-                #print(f"appended {level.current_level().name} to {level.previous_level().name}")
             for base in node.bases:
                 if getFullName(base) in dir(builtins):
                     level.current_level().inherited_classes.append(ClassObject(base.id))
@@ -126,7 +124,6 @@ class specificClass_visitor(ast.NodeVisitor):
                     if k not in level.current_level().inherited_functions:
                         level.current_level().inherited_functions[k] = v
             level.pop()
-            #print(f"popped {level.pop().name}; current level is now {level.current_level().name}")
         else:
             self.visited_classes += 1
             if self.visited_classes == self.classNumber:
@@ -192,8 +189,6 @@ def file_checker(moduleName, parentPath, tryNumber):
     """
     file_path = parentPath / Path(moduleName + ".py")
     package_constructor_path = parentPath / Path(moduleName + "/__init__.py")
-    #if package_constructor_path == venvPath / "lib/python3.11/site-packages" / Path(moduleName + "/__init__.py"):
-    #    breakpoint()
     if file_path.exists():
         return file_path
     elif package_constructor_path.exists():
@@ -203,15 +198,17 @@ def file_checker(moduleName, parentPath, tryNumber):
             breakpoint()
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
-        # make it so it doesnt assume that site-packages is at the end
         if args.v:
-            return file_checker(moduleName, sys.path[tryNumber], tryNumber) if Path(sys.path[tryNumber]).name != "site-packages" else file_checker(moduleName, venvPath / "lib/python3.11/site-packages", tryNumber)
+            if Path(sys.path[tryNumber]).name == "site-packages":
+                venvPath = args.v / "/".join(Path(sys.path[tryNumber]).parts[-3:])
+                return file_checker(moduleName, venvPath, tryNumber)
+            else:
+                return file_checker(moduleName, sys.path[tryNumber], tryNumber)
         else:
             return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
 def treeBuilder(classObject, parent=None):
     if args.path_viewer:
-        # If path_viewer is enabled, show the full module path for each class
         label = f"{classObject.name} ({classObject.module})"
     else:
         label = f"{classObject.name} ({classObject.module.name if hasattr(classObject.module, 'name') else classObject.module})"
@@ -227,7 +224,6 @@ def treeBuilder(classObject, parent=None):
                 treeBuilder(inherited_class, parent=inherited_classesNode)
     else:
         for inherited_class in classObject.inherited_classes:
-            #breakpoint()
             treeBuilder(inherited_class, parent=classNode)
     return classNode
 
@@ -255,7 +251,7 @@ class FunctionObject():
 PLATFORM_SPECIFIC_BUILTINS = {
     # Windows
     '_winapi', 'msvcrt', 'winsound', '_msi',
-    # Unix/Linux/Mac  
+    # Unix/Linux/Mac
     '_posix', '_scproxy', 'grp', 'pwd', 'spwd',
     # Add more as needed
 }
