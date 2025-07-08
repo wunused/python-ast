@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/hassamgani/Library/Mobile Documents/com~apple~CloudDocs/Columbia/Semesters/Summer 2025/Research/Task1/venv/bin/python3.11" "$0" "$@"
+'''exec' "/Users/hassamgani/Library/Mobile Documents/com~apple~CloudDocs/Columbia/Semesters/Summer 2025/Research/Task1/venv/venvtools/bin/python3.11" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

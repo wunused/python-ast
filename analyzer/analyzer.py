@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import ast
-from cli import args, moduleName, parentPath, classlist, level
+try:
+    from cli import args, moduleName, parentPath, classlist, level
+except:
+    raise FileNotFoundError("Insert a valid path")
 from pathlib import Path
 import sys
 import builtins
@@ -42,6 +45,9 @@ def specificClassPrinter(modulePath, className):
         moduleTree = ast.parse(module.read())
     visitor = specificClass_visitor(modulePath, className, moduleTree)
     visitor.visit(moduleTree)
+    if not visitor.class_found:
+        visitor.importVisitor = import_visitor(visitor.modulePath, visitor.className)
+        visitor.importVisitor.visit(visitor.moduleTree)
 
 class import_visitor(ast.NodeVisitor):
     def __init__(self, modulePath, className, moduleName=None):
@@ -61,6 +67,8 @@ class import_visitor(ast.NodeVisitor):
             import_alias_loop(module, parentPath, alias, self.className, self.moduleName)
 
     def visit_ImportFrom(self, node):
+        if node.module == None:
+            node.module = "."
         if "." in node.module:
             module, parentPath = resolve_path(node.module, self.modulePath.parent)
         else:
@@ -94,9 +102,11 @@ class specificClass_visitor(ast.NodeVisitor):
         self.parentPath = modulePath.parent
         self.modulePath = modulePath
         self.className = className
+        self.class_found = False
 
     def visit_ClassDef(self, node):
         if node.name == self.className:
+            self.class_found = True
             level.push(ClassObject(node.name, self.modulePath))
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
@@ -112,7 +122,6 @@ class specificClass_visitor(ast.NodeVisitor):
                 for k, v in classObject.inherited_functions.items():
                     if k not in level.current_level().inherited_functions:
                         level.current_level().inherited_functions[k] = v
-            
             level.pop()
         else:
             self.visited_classes += 1
