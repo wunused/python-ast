@@ -5,7 +5,7 @@ from pathlib import Path
 import builtins
 
 print(ast.dump(ast.parse("""\
-from lib import D as DEE
+from . import Node
 """), indent=4))
 
 pprint(sys.path)

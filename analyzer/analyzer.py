@@ -68,14 +68,17 @@ class import_visitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node):
         if node.module == None:
-            node.module = "."
-        if "." in node.module:
-            module, parentPath = resolve_path(node.module, self.modulePath.parent)
-        else:
-            module = node.module
             parentPath = self.modulePath.parent
-        for alias in node.names:
-            importFrom_alias_loop(module, parentPath, alias, self.className)
+            for alias in node.names:
+                import_alias_loop(alias.name, parentPath, alias, self.className, self.moduleName)
+        else:
+            if "." in node.module:
+                module, parentPath = resolve_path(node.module, self.modulePath.parent)
+            else:
+                module = node.module
+                parentPath = self.modulePath.parent
+            for alias in node.names:
+                importFrom_alias_loop(module, parentPath, alias, self.className)
 
 class specificClass_visitor(ast.NodeVisitor):
     class ClassCounter(ast.NodeVisitor):
