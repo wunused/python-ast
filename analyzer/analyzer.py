@@ -269,33 +269,5 @@ class FunctionObject():
     def __repr__(self):
         return self.name
 
-PLATFORM_SPECIFIC_BUILTINS = {
-    # Windows
-    '_winapi', 'msvcrt', 'winsound', '_msi',
-    # Unix/Linux/Mac
-    '_posix', '_scproxy', 'grp', 'pwd', 'spwd',
-    # Add more as needed
-}
-
-def is_platform_specific_builtin(module_name):
-    return module_name in PLATFORM_SPECIFIC_BUILTINS
-
-JYTHON_PACKAGES = {
-    'org.python.core',
-    'org.python.util',
-    'org.python.modules',
-    'org.python.compiler',
-    'org.python.antlr',
-    'java.lang',
-    'java.util',
-    'java.io',
-    'javax.',
-    'com.sun.',
-    'com.oracle.'
-}
-
-def is_jython_related(module_name):
-    return module_name in JYTHON_PACKAGES
-
 if __name__ == '__main__':
     main()
