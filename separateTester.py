@@ -6,8 +6,7 @@ import builtins
 from types import MethodDescriptorType
 
 print(ast.dump(ast.parse("""\
-class someclass(object):
-    pass
+from element.pinho import app
 """), indent=4))
 
 pprint(sys.path)

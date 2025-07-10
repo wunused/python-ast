@@ -73,6 +73,9 @@ class import_visitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node):
         if node.module == None:
             parentPath = self.modulePath.parent
+            if node.level > 1:
+                for _ in range(1, node.level):
+                    parentPath = parentPath.parent
             for alias in node.names:
                 import_alias_loop(alias.name, parentPath, alias, self.className, self.moduleName)
         else:
