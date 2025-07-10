@@ -8,7 +8,10 @@ except:
 from pathlib import Path
 import sys
 import builtins
-from types import MethodDescriptorType
+from types import (
+    FunctionType, BuiltinFunctionType, MethodDescriptorType,
+    WrapperDescriptorType, MemberDescriptorType, GetSetDescriptorType
+)
 from anytree import Node, RenderTree
 
 def main ():
@@ -119,7 +122,14 @@ class specificClass_visitor(ast.NodeVisitor):
                     level.push(ClassObject(base.id))
                     level.previous_level().inherited_classes.append(level.current_level())
                     for k, v in getattr(builtins, base.id, None).__dict__.items():
-                        if isinstance(v, MethodDescriptorType):
+                        if isinstance(v,
+                            (FunctionType,
+                            BuiltinFunctionType,
+                            WrapperDescriptorType,
+                            MethodDescriptorType,
+                            MemberDescriptorType,
+                            GetSetDescriptorType)
+                        ):
                             level.current_level().functions.append(FunctionObject(k))
                     level.pop()
                     continue
