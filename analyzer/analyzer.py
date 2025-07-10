@@ -8,6 +8,7 @@ except:
 from pathlib import Path
 import sys
 import builtins
+from types import MethodDescriptorType
 from anytree import Node, RenderTree
 
 def main ():
@@ -115,7 +116,12 @@ class specificClass_visitor(ast.NodeVisitor):
                 level.previous_level().inherited_classes.append(level.current_level())
             for base in node.bases:
                 if getFullName(base) in dir(builtins):
-                    level.current_level().inherited_classes.append(ClassObject(base.id))
+                    level.push(ClassObject(base.id))
+                    level.previous_level().inherited_classes.append(level.current_level())
+                    for k, v in getattr(builtins, base.id, None).__dict__.items():
+                        if isinstance(v, MethodDescriptorType):
+                            level.current_level().functions.append(FunctionObject(k))
+                    level.pop()
                     continue
                 import_DFS_tree(self.modulePath, getFullName(base))
             functionFinder = self.FunctionFinder(level.current_level())
