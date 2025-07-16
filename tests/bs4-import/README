@@ -8,6 +8,7 @@ Output:
 
 $ python3 analyzer/analyzer.py tests/bs4-import/app.py -c UglySoup
 UglySoup (app.py)
-└── BeautifulSoup
-    └── Tag
-        └── PageElement
+└── BeautifulSoup (__init__.py)
+    └── Tag (element.py)
+        └── PageElement (element.py)
+            └── object (builtins)
