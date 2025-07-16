@@ -1,6 +1,6 @@
 # Test 4
 
-Checks that inheritance in single file works ** currently does not work
+Checks that inheritance in single file works 
 
 $ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Animal
 Animal (hierarchy.py)
