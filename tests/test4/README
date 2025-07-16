@@ -6,7 +6,10 @@ $ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Animal
 Animal (hierarchy.py)
 
 $ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Mammal
-Mammal (hierarchy.py)
+Animal (hierarchy.py)
+└── Mammal (hierarchy.py)
 
 $ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Human
-Human (hierarchy.py)
+Animal (hierarchy.py)
+└── Mammal (hierarchy.py)
+    └── Human (hierarchy.py)
