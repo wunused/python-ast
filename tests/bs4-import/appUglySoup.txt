@@ -1,0 +1,5 @@
+UglySoup (app.py)
+└── BeautifulSoup (__init__.py)
+    └── Tag (element.py)
+        └── PageElement (element.py)
+            └── object (builtins)
