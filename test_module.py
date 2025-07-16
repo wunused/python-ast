@@ -8,6 +8,11 @@ import subprocess
     ("A", "tests/test1/app.py", "tests/test1/appA.txt"),
     ("B", "tests/test1/app.py", "tests/test1/appB.txt"),
     ("new", "tests/test1/app.py", "tests/test1/appnew.txt"),
+    ("Animal", "tests/test2/animal.py", "tests/test2/animalAnimal.txt"),
+    ("Animal", "tests/test2/wild.py", "tests/test2/wildAnimal.txt"),
+    ("Feline", "tests/test2/wild.py", "tests/test2/wildFeline.txt"),
+    ("Dog", "tests/test2/pet.py", "tests/test2/petDog.txt"),
+    ("Cat", "tests/test2/pet.py", "tests/test2/petCat.txt"),
 ]) 
 
 
