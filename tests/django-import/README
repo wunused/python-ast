@@ -5,11 +5,14 @@ Test django-import/djangotutorial/polls/models.py for installed package inherita
 **previously had some issues due to django package initialization
 
 $ python3 analyzer/analyzer.py tests/django-import/djangotutorial/polls/models.py -c Question
-Question (models.py) **
+Question (models.py)
+└── Model (base.py)
+    └── object (builtins)
 
 $ python3 analyzer/analyzer.py tests/django-import/djangotutorial/polls/models.py -c Choice
-Choice (models.py) **
-
+Choice (models.py)
+└── Model (base.py)
+    └── object (builtins)
 
 Output:
     Recognize that the Question and Choice classes inherit from models.Model
