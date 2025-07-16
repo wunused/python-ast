@@ -1,4 +1,4 @@
-# BeatifulSoup test
+# BeautifulSoup test
 
 Input: UglySoup
 Output:
@@ -6,7 +6,8 @@ Output:
     Recognize that the UglySoup inherited methods are the bs4.BeautifulSoup
     methods.
 
-$ python3 analyzer.py -c app.UglySoup tests/bs4-import/app.py
-Functions: ['app.UglySoup.my_ugly_method']
-Inherited Classes: ['bs4.BeautifulSoup', 'bs4.element.Tag', 'bs4.element.PageElement', 'object']
-Inherited Functions: []
+$ python3 analyzer/analyzer.py tests/bs4-import/app.py -c UglySoup
+UglySoup (app.py)
+└── BeautifulSoup
+    └── Tag
+        └── PageElement
