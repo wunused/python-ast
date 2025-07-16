@@ -30,6 +30,9 @@ import subprocess
     ("italian", "tests/test7/italian.py", "tests/test7/italianitalian.txt"),
     ("english", "tests/test7/english.py", "tests/test7/englishenglish.txt"),
     ("UglySoup", "tests/bs4-import/app.py", "tests/bs4-import/appUglySoup.txt"),
+    ("Question", "tests/django-import/djangotutorial/polls/models.py", "tests/django-import/djangoQuestion.txt"),
+    ("Choice", "tests/django-import/djangotutorial/polls/models.py", "tests/django-import/djangoChoice.txt"),
+    ("TestCategorizeByAge", "tests/unittest-import/test_age.py", "tests/unittest-import/testcategorize.txt"),
 ]) 
 
 
