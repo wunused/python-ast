@@ -10,5 +10,5 @@ Output:
 
 $ python3 analyzer/analyzer.py tests/unittest-import/test_age.py -c TestCategorizeByAge
 TestCategorizeByAge (test_age.py)
-└── unittest (__init__.py)
+└── TestCase (case.py)
     └── object (builtins)
