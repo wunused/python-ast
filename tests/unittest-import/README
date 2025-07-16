@@ -8,7 +8,7 @@ Output:
     Recognize that the TestCategorizeByAge class inerits the unittest.TestCase
     methods.
 
-$ python3 analyzer.py -c test_age.TestCategorizeByAge tests/unittest-import/test_age.py
-Functions: ['test_age.TestCategorizeByAge.test_child', 'test_age.TestCategorizeByAge.test_adolescent', 'test_age.TestCategorizeByAge.test_adult', 'test_age.TestCategorizeByAge.test_golden_age', 'test_age.TestCategorizeByAge.test_negative_age', 'test_age.TestCategorizeByAge.test_too_old']
-Inherited Classes: ['unittest.case.TestCase', 'object']
-Inherited Functions: []
+$ python3 analyzer/analyzer.py tests/unittest-import/test_age.py -c TestCategorizeByAge
+TestCategorizeByAge (test_age.py)
+└── unittest (__init__.py)
+    └── object (builtins)
