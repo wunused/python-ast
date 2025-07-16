@@ -85,7 +85,7 @@ class import_visitor(ast.NodeVisitor):
                 module = node.module
                 parentPath = self.modulePath.parent
             for alias in node.names:
-                importFrom_alias_loop(module, parentPath, alias, self.className)
+                importFrom_alias_loop(module, parentPath, alias, self.className, self.moduleName)
 
 class specificClass_visitor(ast.NodeVisitor):
     class ClassCounter(ast.NodeVisitor):
@@ -159,11 +159,13 @@ def import_alias_loop(module, parentPath, alias, className, moduleName):
     elif alias.name == moduleName:
         specificClassPrinter(file_checker(module, parentPath, -1), className)
 
-def importFrom_alias_loop(module, parentPath, alias, className):
+def importFrom_alias_loop(module, parentPath, alias, className, baseModuleName):
     if getattr(alias, 'asname', None) == className:
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
     elif alias.name == className:
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
+    elif alias.name == baseModuleName:
+        specificClassPrinter(file_checker(module + "/" + baseModuleName, parentPath, -1), className)
 
 def classFinder(modulePath, className, moduleName):
     with open(modulePath, "r") as module:
