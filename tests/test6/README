@@ -1,16 +1,16 @@
 # Test 6
 
 Inheriting from multiple classes case
+* logically this test case doesn't quite make sense in hindsight, could change naming
 
 $ python3 analyzer/analyzer.py tests/test6/person.py -c Person
 Person (person.py)
 
-$ python3 analyzer.py -c employee.Employee tests/test6/employee.py
-Functions: ['employee.Employee.__init__', 'employee.Employee.display_employee_info']
-Inherited Classes: []
-Inherited Functions: []
+$ python3 analyzer/analyzer.py tests/test6/employee.py -c Employee
+Employee (employee.py)
+└── Person (person.py)
 
-$ python3 analyzer.py -c manager.Manager tests/test6/manager.py
-Functions: ['manager.Manager.__init__', 'manager.Manager.display_manager_info']
-Inherited Classes: ['person.Person', 'employee.Employee']
-Inherited Functions: ['person.Person.__init__', 'person.Person.display_person_info', 'employee.Employee.__init__', 'employee.Employee.display_employee_info']
+$ python3 analyzeranalyzer.py tests/test6/manager.py -c Manager
+Manager (manager.py)
+├── Person (person.py)
+└── Employee (employee.py)
