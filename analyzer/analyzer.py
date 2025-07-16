@@ -1,26 +1,35 @@
+#!/usr/bin/env python3
+
 import ast
-from cli import args, moduleName, parentPath, classlist, level
+try:
+    from cli import args, file_name_parentPath, file_name_moduleName, classlist, level
+except:
+    raise FileNotFoundError("Insert a valid path")
 from pathlib import Path
 import sys
 import builtins
+from types import (
+    FunctionType, BuiltinFunctionType, MethodDescriptorType,
+    WrapperDescriptorType, MemberDescriptorType, GetSetDescriptorType
+)
 from anytree import Node, RenderTree
 
 def main ():
     args
-    non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False)}
+    non_file_name_args = {k: v for k, v in vars(args).items() if k != "file_name" and v not in (None, False) and k != "v"}
     if not non_file_name_args or non_file_name_args == {'verbose': True}:
-        fileClassesPrinter(parentPath / moduleName)
-        print(f"Classes in {parentPath / moduleName}:")
+        fileClassesPrinter(file_name_parentPath / file_name_moduleName)
+        print(f"Classes in {file_name_parentPath / file_name_moduleName}:")
         for className in classlist:
             print(className)
     elif args.class_name:
-        specificClassPrinter(parentPath / moduleName, args.class_name)
+        specificClassPrinter(file_name_parentPath / file_name_moduleName, args.class_name)
         for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
             print(f"{pre}{node.name}")
     else:
-        fileClassesPrinter(parentPath / moduleName)
+        fileClassesPrinter(file_name_parentPath / file_name_moduleName)
         for className in classlist:
-            specificClassPrinter(parentPath / moduleName, className)
+            specificClassPrinter(file_name_parentPath / file_name_moduleName, className)
             for pre, fill, node in RenderTree(treeBuilder(level.firstElement)):
                 print(f"{pre}{node.name}")
 
@@ -40,6 +49,9 @@ def specificClassPrinter(modulePath, className):
         moduleTree = ast.parse(module.read())
     visitor = specificClass_visitor(modulePath, className, moduleTree)
     visitor.visit(moduleTree)
+    if not visitor.class_found:
+        visitor.importVisitor = import_visitor(visitor.modulePath, visitor.className)
+        visitor.importVisitor.visit(visitor.moduleTree)
 
 class import_visitor(ast.NodeVisitor):
     def __init__(self, modulePath, className, moduleName=None):
@@ -59,13 +71,21 @@ class import_visitor(ast.NodeVisitor):
             import_alias_loop(module, parentPath, alias, self.className, self.moduleName)
 
     def visit_ImportFrom(self, node):
-        if "." in node.module:
-            module, parentPath = resolve_path(node.module, self.modulePath.parent)
-        else:
-            module = node.module
+        if node.module == None:
             parentPath = self.modulePath.parent
-        for alias in node.names:
-            importFrom_alias_loop(module, parentPath, alias, self.className)
+            if node.level > 1:
+                for _ in range(1, node.level):
+                    parentPath = parentPath.parent
+            for alias in node.names:
+                import_alias_loop(alias.name, parentPath, alias, self.className, self.moduleName)
+        else:
+            if "." in node.module:
+                module, parentPath = resolve_path(node.module, self.modulePath.parent)
+            else:
+                module = node.module
+                parentPath = self.modulePath.parent
+            for alias in node.names:
+                importFrom_alias_loop(module, parentPath, alias, self.className)
 
 class specificClass_visitor(ast.NodeVisitor):
     class ClassCounter(ast.NodeVisitor):
@@ -92,15 +112,29 @@ class specificClass_visitor(ast.NodeVisitor):
         self.parentPath = modulePath.parent
         self.modulePath = modulePath
         self.className = className
+        self.class_found = False
 
     def visit_ClassDef(self, node):
+        self.class_found = True
         if node.name == self.className:
             level.push(ClassObject(node.name, self.modulePath))
             if level.previous_level():
                 level.previous_level().inherited_classes.append(level.current_level())
             for base in node.bases:
                 if getFullName(base) in dir(builtins):
-                    level.current_level().inherited_classes.append(ClassObject(base.id))
+                    level.push(ClassObject(base.id))
+                    level.previous_level().inherited_classes.append(level.current_level())
+                    for k, v in getattr(builtins, base.id, None).__dict__.items():
+                        if isinstance(v,
+                            (FunctionType,
+                            BuiltinFunctionType,
+                            WrapperDescriptorType,
+                            MethodDescriptorType,
+                            MemberDescriptorType,
+                            GetSetDescriptorType)
+                        ):
+                            level.current_level().functions.append(FunctionObject(k))
+                    level.pop()
                     continue
                 import_DFS_tree(self.modulePath, getFullName(base))
             functionFinder = self.FunctionFinder(level.current_level())
@@ -110,7 +144,6 @@ class specificClass_visitor(ast.NodeVisitor):
                 for k, v in classObject.inherited_functions.items():
                     if k not in level.current_level().inherited_functions:
                         level.current_level().inherited_functions[k] = v
-            
             level.pop()
         else:
             self.visited_classes += 1
@@ -169,6 +202,12 @@ def getFullName(base):
         breakpoint()
 
 def file_checker(moduleName, parentPath, tryNumber):
+    """"
+    parentPath is the path to where the import statement to moduleName was found
+    checks if there exists in the sam directory the module or a package with the name of the module
+    
+    if not in the parentPath, it recursively goes through sys.path to check if it's there
+    """
     file_path = parentPath / Path(moduleName + ".py")
     package_constructor_path = parentPath / Path(moduleName + "/__init__.py")
     if file_path.exists():
@@ -180,11 +219,17 @@ def file_checker(moduleName, parentPath, tryNumber):
             breakpoint()
             raise FileNotFoundError(f"Module {moduleName} not found in the specified paths.")
         tryNumber += 1
-        return file_checker(moduleName, sys.path[tryNumber], tryNumber)
+        if args.venv:
+            if Path(sys.path[tryNumber]).name == "site-packages":
+                venvPath = args.venv / "/".join(Path(sys.path[tryNumber]).parts[-3:])
+                return file_checker(moduleName, venvPath, tryNumber)
+            else:
+                return file_checker(moduleName, sys.path[tryNumber], tryNumber)
+        else:
+            return file_checker(moduleName, sys.path[tryNumber], tryNumber)
 
 def treeBuilder(classObject, parent=None):
     if args.path_viewer:
-        # If path_viewer is enabled, show the full module path for each class
         label = f"{classObject.name} ({classObject.module})"
     else:
         label = f"{classObject.name} ({classObject.module.name if hasattr(classObject.module, 'name') else classObject.module})"
@@ -200,7 +245,7 @@ def treeBuilder(classObject, parent=None):
                 treeBuilder(inherited_class, parent=inherited_classesNode)
     else:
         for inherited_class in classObject.inherited_classes:
-                treeBuilder(inherited_class, parent=classNode)
+            treeBuilder(inherited_class, parent=classNode)
     return classNode
 
 class ClassObject():
@@ -209,10 +254,10 @@ class ClassObject():
         self.module = module
         if module is None:
             self.module = "builtins"
-        self.inherited_classes: list[ClassObject] = [] # or dictionary
+        self.inherited_classes: list[ClassObject] = []
         self.functions: list[FunctionObject] = []
-        self.inherited_functions: dict[FunctionObject] = {}  # or dictionary
-        self.all_functions: list[FunctionObject] = []  # all functions including inherited ones
+        self.inherited_functions: dict[FunctionObject] = {}
+        self.all_functions: list[FunctionObject] = []
 
     def __repr__(self):
         return f"ClassObject(name={self.name}, inherited_classes={self.inherited_classes})\n{self.functions})\n"
@@ -223,34 +268,6 @@ class FunctionObject():
 
     def __repr__(self):
         return self.name
-
-PLATFORM_SPECIFIC_BUILTINS = {
-    # Windows
-    '_winapi', 'msvcrt', 'winsound', '_msi',
-    # Unix/Linux/Mac  
-    '_posix', '_scproxy', 'grp', 'pwd', 'spwd',
-    # Add more as needed
-}
-
-def is_platform_specific_builtin(module_name):
-    return module_name in PLATFORM_SPECIFIC_BUILTINS
-
-JYTHON_PACKAGES = {
-    'org.python.core',
-    'org.python.util',
-    'org.python.modules',
-    'org.python.compiler',
-    'org.python.antlr',
-    'java.lang',
-    'java.util',
-    'java.io',
-    'javax.',
-    'com.sun.',
-    'com.oracle.'
-}
-
-def is_jython_related(module_name):
-    return module_name in JYTHON_PACKAGES
 
 if __name__ == '__main__':
     main()
