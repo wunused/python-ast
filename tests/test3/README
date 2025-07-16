@@ -9,12 +9,12 @@ $ python3 analyzer/analyzer.py tests/test3/b.py -c B
 B (b.py)
 └── A (a.py)
 
-$ python3 analyzer.py tests/test3/c.py -c C
+$ python3 analyzer/analyzer.py tests/test3/c.py -c C
 C (c.py)
 └── B (b.py)
     └── A (a.py)
 
-$ python3 analyzer.py tests/test3/d.py -c D
+$ python3 analyzer/analyzer.py tests/test3/d.py -c D
 D (d.py)
 └── C (c.py)
     └── B (b.py)
