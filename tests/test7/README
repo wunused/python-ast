@@ -16,7 +16,8 @@ italian (italian.py)
 $ python3 analyzer/analyzer.py tests/test7/english.py -c english
 english (english.py)
 ├── french (french.py)
-|   └── latin (latin.py)
+│   └── latin (latin.py)
 └── italian (italian.py)
     └── latin (latin.py)
+
 
