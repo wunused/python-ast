@@ -2,10 +2,8 @@
 
 Inheriting from multiple classes case
 
-$ python3 analyzer.py -c person.Person tests/test6/person.py
-Functions: ['person.Person.__init__', 'person.Person.display_person_info']
-Inherited Classes: []
-Inherited Functions: []
+$ python3 analyzer/analyzer.py tests/test6/person.py -c Person
+Person (person.py)
 
 $ python3 analyzer.py -c employee.Employee tests/test6/employee.py
 Functions: ['employee.Employee.__init__', 'employee.Employee.display_employee_info']
