@@ -1,10 +1,14 @@
 import lib
+from . import someletter
 from newApp import pinho
 
 class A(lib.C):
     
 	def a_method(self):
 		pass
+class letter(someletter.bigLetter):
+    def smallLetter():
+        pass
 class B(pinho):
     def b_method(self):
         pass

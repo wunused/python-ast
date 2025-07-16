@@ -11,3 +11,4 @@ _Optional Arguments:_
 -f | type: flag. Must be used with -c. Adds each class' functions to the inheritance tree
 -p | type: flag. Must be used with -c. Prints out full module path each class is in instead of filename
 -a | type: flag. cannot be used with -c. Effectively runs -c on every class inside the file. Can be used with -f and -p
+-venv | type: optional parameter. can be used with any other parameter. Must take in the relative or absolute path to dir if python3 -m venv dir has been executed on the system

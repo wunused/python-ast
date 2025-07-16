@@ -4,7 +4,8 @@ class UglySoup(BeautifulSoup):
 
     def my_ugly_method(self):
         pass
-
+    def printer(self, x):
+        print(x)
 
 html_doc = """
 <html><head><title>The Dormouse's story</title></head>
