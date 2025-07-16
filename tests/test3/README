@@ -2,22 +2,20 @@
 
 Generically testing if multiple inheritances affects performance
 
-$ python3 analyzer.py -c a.A tests/test3/a.py
-Functions: ['a.A.A_method']
-Inherited Classes: []
-Inherited Functions: []
+$ python3 analyzer/analyzer.py tests/test3/a.py -c A
+A (a.py)
 
-$ python3 analyzer.py -c b.B tests/test3/b.py
-Functions: ['b.B.b_method']
-Inherited Classes: ['a.A']
-Inherited Functions: ['a.A.A_method']
+$ python3 analyzer/analyzer.py tests/test3/b.py -c B
+B (b.py)
+└── A (a.py)
 
-$ python3 analyzer.py -c c.C tests/test3/c.py
-Functions: ['c.C.c_method']
-Inherited Classes: ['b.B', 'a.A']
-Inherited Functions: ['b.B.b_method', 'a.A.A_method']
+$ python3 analyzer.py tests/test3/c.py -c C
+C (c.py)
+└── B (b.py)
+    └── A (a.py)
 
-$ python3 analyzer.py -c d.D tests/test3/d.py
-Functions: ['d.D.d_method']
-Inherited Classes: ['c.C', 'b.B', 'a.A']
-Inherited Functions: ['c.C.c_method', 'b.B.b_method', 'a.A.A_method']
+$ python3 analyzer.py tests/test3/d.py -c D
+D (d.py)
+└── C (c.py)
+    └── B (b.py)
+        └── A (a.py)
