@@ -1,7 +1,6 @@
 # Test 2
 
 Case: Inheriting from another file (multiple occurrences) and inheriting from same file
-*** Inheriting from same file doesn't work --> wild.py
 
 What the results should be...
 
