@@ -166,6 +166,11 @@ def importFrom_alias_loop(module, parentPath, alias, className, baseModuleName):
         specificClassPrinter(file_checker(module, parentPath, -1), alias.name)
     elif alias.name == baseModuleName:
         specificClassPrinter(file_checker(module + "/" + baseModuleName, parentPath, -1), className)
+    elif alias.name == "*":
+        if baseModuleName:
+            specificClassPrinter(file_checker(module + "/" + baseModuleName, parentPath, -1), className)
+        else:
+            specificClassPrinter(file_checker(module, parentPath, -1), className)
 
 def classFinder(modulePath, className, moduleName):
     with open(modulePath, "r") as module:
@@ -200,6 +205,8 @@ def getFullName(base):
         return base.id
     if isinstance(base, ast.Attribute):
         return getFullName(base.value) + "." + base.attr
+    if isinstance(base, ast.Subscript):
+        return getFullName(base.value)
     if isinstance(base, ast.Call):
         breakpoint()
 
