@@ -2,3 +2,4 @@ anytree
 pytest
 beautifulsoup4
 lxml
+Django
