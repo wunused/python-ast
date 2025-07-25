@@ -6,10 +6,12 @@ import builtins
 from types import MethodDescriptorType
 
 print(ast.dump(ast.parse("""\
-from element.pinho import app
+class Model(torch.nn.Module, typing.Generic[DT], ABC):
+    pass
+from torch.nn.modules import * 
 """), indent=4))
 
-pprint(sys.path)
+""""pprint(sys.path)
 #pprint(Path.cwd())
 #pprint(builtins)
 pprint(tuple.__dict__)
@@ -43,4 +45,4 @@ for k, v in object.__dict__.items():
         
         print(k)
         
-        print(type(v))
+        print(type(v))"""
