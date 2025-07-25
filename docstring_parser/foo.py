@@ -6,7 +6,13 @@ class Foo:
 
     
         """
-        I am a docstring
+        Args:
+          a (int): ...
+          b (str): ...
+          c (bool): ...
+
+        Returns:
+          bool: True if successful, False otherwise.
         """
 
         pass
