@@ -50,22 +50,22 @@ def main():
             code_content = f.read()
         tree = ast.parse(code_content)
 
-        typeann = TypeAnnotator()
-        patched_tree = typeann.visit(tree)
-        ast.fix_missing_locations(patched_tree)
-        print(ast.dump(patched_tree, indent=4))
+#        typeann = TypeAnnotator()
+#        patched_tree = typeann.visit(tree)
+#        ast.fix_missing_locations(patched_tree)
+#        print(ast.dump(patched_tree, indent=4))
         
-#        for node in ast.walk(tree):
-#            if isinstance(node, ast.FunctionDef):
-#                doc = ast.get_docstring(node)
-#                if doc:
-#                    tup = extract_types(doc)
-#                    print(tup)
-#            if isinstance(node, ast.ClassDef):
-#                doc = ast.get_docstring(node)
-#                if doc:
-#                    doc = '"' + doc + '"'
-#                    print(f"class definition `{node.name}`:", doc)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                doc = ast.get_docstring(node)
+                if doc:
+                    tup = extract_types(doc)
+                    print(tup)
+            if isinstance(node, ast.ClassDef):
+                doc = ast.get_docstring(node)
+                if doc:
+                    doc = '"' + doc + '"'
+                    print(f"class definition `{node.name}`:", doc)
 
     except FileNotFoundError:
         print(f"Error: File '{filepath}' not found.")
