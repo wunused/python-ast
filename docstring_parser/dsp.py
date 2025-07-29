@@ -26,11 +26,31 @@ def extract_types(doc):
             returns = False
     return tup
 
+def extract_attributes(doc):
+    dictionary = {}
+    attr = False
+    parts = doc.strip().split(":")
+    for part in parts:
+        part = part.strip()
+        if part == "":
+            continue
+        if "Attributes" in part:
+            attr = True
+        elif attr:
+            param = part.strip().split(" ")
+            length = len(param)
+            key = param[length-2]
+            val = param[length-1][1:len(param[1])-1]
+            dictionary[key] = val
+    return dictionary
+
 class TypeAnnotator(ast.NodeTransformer):
     def visit_FunctionDef(self, node):
         doc = ast.get_docstring(node)
         if doc:
             tup = extract_types(doc)
+            if not tup:
+                return node
             arg_types = tup[0]
             return_type = tup[1]
 
@@ -39,6 +59,20 @@ class TypeAnnotator(ast.NodeTransformer):
                     arg.annotation = ast.Name(id=arg_types[arg.arg], ctx=ast.Load())
             if return_type:
                 node.returns = ast.Name(id=return_type, ctx=ast.Load())
+        self.generic_visit(node)
+        return node
+    def visit_ClassDef(self, node):
+        doc = ast.get_docstring(node)
+        if doc: 
+            dictionary = extract_attributes(doc)
+            for name, type_str in reversed(dictionary.items()):
+                ann_assign = ast.AnnAssign(
+                        target=ast.Name(id=name, ctx=ast.Store()),
+                        annotation=ast.Name(id=type_str, ctx=ast.Load()),
+                        value=None,
+                        simple=1
+                )
+                node.body.insert(1, ann_assign)
         self.generic_visit(node)
         return node
 
@@ -53,19 +87,14 @@ def main():
         typeann = TypeAnnotator()
         patched_tree = typeann.visit(tree)
         ast.fix_missing_locations(patched_tree)
-        print(ast.dump(patched_tree, indent=4))
-        
-#        for node in ast.walk(tree):
-#            if isinstance(node, ast.FunctionDef):
-#                doc = ast.get_docstring(node)
-#                if doc:
-#                    tup = extract_types(doc)
-#                    print(tup)
-#            if isinstance(node, ast.ClassDef):
-#                doc = ast.get_docstring(node)
-#                if doc:
-#                    doc = '"' + doc + '"'
-#                    print(f"class definition `{node.name}`:", doc)
+        try:
+            new_code = ast.unparse(tree)
+        except AttributeError:
+            import astunparse
+            new_code = astunparse.unparse(tree)
+
+        with open(output_path, 'w') as f:
+            f.write(new_code) 
 
     except FileNotFoundError:
         print(f"Error: File '{filepath}' not found.")
