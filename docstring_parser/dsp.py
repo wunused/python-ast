@@ -79,7 +79,6 @@ class TypeAnnotator(ast.NodeTransformer):
 def main():
     try:
         filepath = sys.argv[1]
-        output_path = "modified_copy.py"
         with open(filepath, 'r') as f:
             code_content = f.read()
         tree = ast.parse(code_content)
@@ -93,8 +92,7 @@ def main():
             import astunparse
             new_code = astunparse.unparse(tree)
 
-        with open(output_path, 'w') as f:
-            f.write(new_code) 
+        print(new_code)
 
     except FileNotFoundError:
         print(f"Error: File '{filepath}' not found.")
