@@ -18,7 +18,9 @@ def google(doc):
             param = part.strip().split(" ")
             length = len(param)
             key = param[length-2]
-            val = param[length-1][1:len(param[1])-1]
+            valwithparens = param[length-1]
+            lengthval = len(valwithparens)
+            val = valwithparens[1:lengthval-1]
             dictionary[key] = val
         elif returns:
             tup.append(dictionary)
