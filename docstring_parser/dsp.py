@@ -1,7 +1,7 @@
 import ast
 import sys
 
-def extract_types(doc):
+def google(doc):
     tup = []
     dictionary = {}
     args = False
@@ -18,12 +18,66 @@ def extract_types(doc):
             param = part.strip().split(" ")
             length = len(param)
             key = param[length-2]
-            val = param[length-1][1:len(param[1])-1]
+            valwithparens = param[length-1]
+            lengthval = len(valwithparens)
+            val = valwithparens[1:lengthval-1]
             dictionary[key] = val
         elif returns:
             tup.append(dictionary)
             tup.append(part)
             returns = False
+    return tup
+
+def sphinx(doc):
+    tup = []
+    dictionary = {}
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if ":type" in part:
+            param = part.split(" ")
+            key = param[1][:len(param[1]) - 1]
+            dictionary[key] = param[2]
+        elif ":rtype:" in part:
+            param = part.split(" ")
+            tup.append(dictionary)
+            tup.append(param[1])
+    return tup
+
+def numpy(doc):
+    tup = []
+    dictionary = {}
+    returns = False
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if ":" in part:
+            param = part.split(" ")
+            dictionary[param[0]] = param[2]
+        elif "Returns" in part:
+            returns = True
+        elif returns:
+            if "-" in part:
+                continue
+            tup.append(dictionary)
+            tup.append(part)
+            returns = False
+    return tup
+
+def epytext(doc):
+    tup = []
+    dictionary = {}
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if "@type" in part:
+            param = part.split(" ")
+            key = param[1][:len(param[1]) - 1]
+            dictionary[key] = param[2]
+        elif "@rtype" in part:
+            param = part.split(" ")
+            tup.append(dictionary)
+            tup.append(param[1])
     return tup
 
 def extract_attributes(doc):
@@ -47,8 +101,16 @@ def extract_attributes(doc):
 class TypeAnnotator(ast.NodeTransformer):
     def visit_FunctionDef(self, node):
         doc = ast.get_docstring(node)
+        doc_type = sys.argv[2]
         if doc:
-            tup = extract_types(doc)
+            if doc_type.lower() == 'epytext':
+                tup = epytext(doc)
+            elif doc_type.lower() == 'sphinx':
+                tup = sphinx(doc)
+            elif doc_type.lower() == 'numpy':
+                tup = numpy(doc)
+            else:
+                tup = google(doc)
             if not tup:
                 return node
             arg_types = tup[0]
@@ -79,6 +141,7 @@ class TypeAnnotator(ast.NodeTransformer):
 def main():
     try:
         filepath = sys.argv[1]
+        doc_type = sys.argv[2]
         with open(filepath, 'r') as f:
             code_content = f.read()
         tree = ast.parse(code_content)
@@ -97,7 +160,7 @@ def main():
     except FileNotFoundError:
         print(f"Error: File '{filepath}' not found.")
     except IndexError:
-        print("Error: Please provide a file path as a command line argument.")
+        print("Error: Please provide a file path and docstring type as command line arguments.")
 
 if __name__ == '__main__':
     main()
