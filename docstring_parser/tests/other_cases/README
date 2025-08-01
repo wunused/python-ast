@@ -1,0 +1,42 @@
+#Other Docstring Parser Cases
+
+Run in docstring_parser folder
+
+* This test case tests the class type annotations NOT function 
+$ python3 dsp.py tests/other_cases/classann.py [choose any of the options]
+class Foo(object):
+    """this a docstring
+
+    Attributes:
+        a (int):
+        b (str):
+        c (bool):
+    """
+    a: int
+    b: str
+    c: bool
+
+    def __init__(self):
+        pass
+
+* Since there are no annotations specifying on type, any of the options for the docstring format work
+$ python3 dsp.py tests/other_cases/noannotations.py [choose any of the options]
+def foo():
+    """A multi-line
+    docstring.
+    """
+
+def bar():
+    """
+    A multi-line
+    docstring.
+    """
+
+* Since there are no annotations specifying on type, any of the options for the docstring format work
+$ python3 dsp.py tests/other_cases/oneline.py [choose any of the options]
+def kos_root():
+    """Return the pathname of the KOS root directory."""
+    global _kos_root
+    if _kos_root:
+        return _kos_root
+    ...
