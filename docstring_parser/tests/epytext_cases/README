@@ -3,7 +3,6 @@
 Run in docstring_parser folder
 
 $ python3 dsp.py tests/epytext_cases/epytext.py epytext
-
 def function_name(parameter1: type, parameter2: type) -> type:
     """
     This is a brief summary of the function.
