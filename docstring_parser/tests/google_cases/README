@@ -15,6 +15,22 @@ def add(x: int, y: int) -> int:
     """
     return x + y
 
+*This is a class attribute annotation case
+$ python3 dsp.py tests/google_cases/classann.py google
+class Foo(object):
+    """this a docstring
+
+    Attributes:
+        a (int):
+        b (str):
+        c (bool):
+    """
+    a: int
+    b: str
+    c: bool
+
+    def __init__(self):
+        pass
 
 $ python3 dsp.py tests/google_cases/foo.py google
 class Foo:
@@ -28,6 +44,39 @@ class Foo:
 
         Returns:
           bool: True if successful, False otherwise.
+        """
+        pass
+
+$ python3 dsp.py tests/google_cases/gg_vehicles.py google
+class Vehicles(object):
+    """
+    The Vehicle object contains a lot of vehicles
+
+    Args:
+        arg (str): The arg is used for...
+        *args: The variable arguments are used for...
+        **kwargs: The keyword arguments are used for...
+
+    Attributes:
+        arg (str): This is where we store arg,
+    """
+    arg: str
+
+    def __init__(self, arg, *args, **kwargs):
+        self.arg = arg
+
+    def cars(self, distance: int, destination: bool) -> cars:
+        """We can't travel distance in vehicles without fuels, so here is the fuels
+
+        Args:
+            distance (int): The amount of distance traveled
+            destination (bool): Should the fuels refilled to cover the distance?
+
+        Raises:
+            RuntimeError: Out of fuel
+
+        Returns:
+            cars: A car mileage
         """
         pass
 
