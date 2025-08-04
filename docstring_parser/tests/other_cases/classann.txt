@@ -2,9 +2,9 @@ class Foo(object):
     """this a docstring
 
     Attributes:
-        a (int):
-        b (str):
-        c (bool):
+        a (int): 
+        b (str): 
+        c (bool): 
     """
     a: int
     b: str

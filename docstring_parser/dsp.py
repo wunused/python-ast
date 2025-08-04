@@ -3,7 +3,7 @@ import sys
 
 def google(doc):
     """
-    Parses through the docstring and finds type information based on keywords in Google Style Docstrings
+    Parses through the docstring and finds type information based on keywords in the function's Google Style Docstring
 
     Args:
         doc (str): the function's docstring
@@ -39,7 +39,7 @@ def google(doc):
 
 def sphinx(doc):
     """
-    Parses through the docstring and finds type information based on keywords in Sphinx Style Docstrings
+    Parses through the docstring and finds type information based on keywords in the function's Sphinx Style Docstring
 
     Args:
        doc (str): the function's docstring
@@ -64,7 +64,7 @@ def sphinx(doc):
 
 def numpy(doc):
     """
-    Parses through the docstring and finds type information based on keywords in NumPy Style Docstrings
+    Parses through the docstring and finds type information based on keywords in the function's NumPy Style Docstring
 
     Args:
        doc (str): the function's docstring
@@ -93,7 +93,7 @@ def numpy(doc):
 
 def epytext(doc):
     """
-    Parses through the docstring and finds type information based on keywords in Epytext Style Docstrings
+    Parses through the docstring and finds type information based on keywords in the function's Epytext Style Docstring
 
     Args:
        doc (str): the function's docstring
@@ -116,9 +116,9 @@ def epytext(doc):
             tup.append(param[1])
     return tup
 
-def extract_attributes(doc):
+def google_class(doc):
     """
-    Parses through the docstring and finds type information based on keywords in the class docstring
+    Parses through the docstring and finds type information based on keywords in the class's Google Style Docstring
 
     Args:
        doc (str): the class's docstring
@@ -128,7 +128,7 @@ def extract_attributes(doc):
     """
     dictionary = {}
     attr = False
-    parts = doc.strip().split(":")
+    parts = doc.strip().splitlines()
     for part in parts:
         part = part.strip()
         if part == "":
@@ -138,8 +138,84 @@ def extract_attributes(doc):
         elif attr:
             param = part.strip().split(" ")
             length = len(param)
-            key = param[length-2]
-            val = param[length-1][1:len(param[1])-1]
+            key = param[0]
+            val = param[1][1:len(param[1])-2]
+            dictionary[key] = val
+    return dictionary
+
+def sphinx_class(doc):
+    """
+    Parses through the docstring and finds type information based on keywords in the class's Sphinx Style Docstring
+
+    Args:
+       doc (str): the class's docstring
+
+    Returns:
+       dictionary: a dictionary of the attributes of the class
+    """
+    dictionary = {}
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if part == "":
+            continue
+        if ":vartype" in part:
+            param = part.strip().split(" ")
+            length = len(param)
+            key = param[length-2][:len(param[length-2])-1]
+            val = param[length-1]
+            dictionary[key] = val
+    return dictionary
+
+def numpy_class(doc):
+    """
+    Parses through the docstring and finds type information based on keywords in the class's NumPy Style Docstring
+
+    Args:
+       doc (str): the class's docstring
+
+    Returns:
+       dictionary: a dictionary of the attributes of the class
+    """
+    dictionary = {}
+    attr = False
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if part == "":
+            continue
+        if "Attributes" in part:
+            attr = True
+        elif attr and ':' in part:
+            if '-' in part:
+                continue
+            param = part.strip().split(" ")
+            key = param[0]
+            val = param[2]
+            dictionary[key] = val
+    return dictionary
+
+
+def epytext_class(doc):
+    """
+    Parses through the docstring and finds type information based on keywords in the class's Epytext Style Docstring
+
+    Args:
+       doc (str): the class's docstring
+
+    Returns:
+       dictionary: a dictionary of the attributes of the class
+    """
+    dictionary = {}
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if part == "":
+            continue
+        if "@type" in part:
+            param = part.strip().split(" ")
+            key = param[0][:len(param[0])-1]
+            val = param[1]
             dictionary[key] = val
     return dictionary
 
@@ -207,8 +283,16 @@ class TypeAnnotator(ast.NodeTransformer):
             ast.ClassDef: The potentially modified class definition node with updated type annotations.
         """
         doc = ast.get_docstring(node)
+        doc_type = sys.argv[2]
         if doc: 
-            dictionary = extract_attributes(doc)
+            if doc_type == 'sphinx':
+                dictionary = sphinx_class(doc)
+            elif doc_type == 'numpy':
+                dictionary = numpy_class(doc)
+            elif doc_type == 'epytext':
+                dictionary == epytext_class(doc)
+            else:
+                dictionary = google_class(doc)
             for name, type_str in reversed(dictionary.items()):
                 ann_assign = ast.AnnAssign(
                         target=ast.Name(id=name, ctx=ast.Store()),
