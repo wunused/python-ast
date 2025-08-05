@@ -1,3 +1,0 @@
-Manager (manager.py)
-├── Person (person.py)
-└── Employee (employee.py)

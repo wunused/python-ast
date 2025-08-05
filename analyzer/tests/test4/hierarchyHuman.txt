@@ -1,3 +1,0 @@
-Human (hierarchy.py)
-└── Mammal (hierarchy.py)
-    └── Animal (hierarchy.py)

@@ -1,3 +1,0 @@
-Cat (pet.py)
-└── Feline (wild.py)
-    └── Animal (wild.py)

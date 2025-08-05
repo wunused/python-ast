@@ -1,3 +1,0 @@
-Choice (models.py)
-└── Model (base.py)
-    └── object (builtins)
