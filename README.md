@@ -1,14 +1,16 @@
-Primary Purpose: print out class hierarchy tree
+# python-ast
+This is a repository of tools/applications used to analyze and modify python code into a standard format. 
 
-**Usage**
+## class_hierarchy_analyzer
+This folder contains class hierarchy analyzer code (cha.py) that analyzes a given file and returns the inheritance tree of the file.
+This folder also contains test cases for the analyzer.
+### test_module.py
+This is a pytest file that automatically tests the analyzer with all the test cases when run.
+### tests/tester.py
+This file dynamically analyzes class hierarchy with python.
 
-Must always take in a file. This can be a relative (to the current working directory) or absolute path. With only the file as the positional argument, it prints out all the classes in it.
-
-_Optional Arguments:_
-
--h | shows help message
--c | provides class inheritance tree for a specific class along with the filename each class is in
--f | type: flag. Must be used with -c. Adds each class' functions to the inheritance tree
--p | type: flag. Must be used with -c. Prints out full module path each class is in instead of filename
--a | type: flag. cannot be used with -c. Effectively runs -c on every class inside the file. Can be used with -f and -p
--venv | type: optional parameter. can be used with any other parameter. Must take in the relative or absolute path to dir if python3 -m venv dir has been executed on the system
+## docstring_parser
+This folder contains docstring parsing code (dsp.py) that processes an input file and outputs to stdout modified code with type annotations based on the docstring.
+This folder also contains test cases for the parser.
+### test_docstring.py
+This is a pytest file that automatically tests the parser with all the tests cases when run.

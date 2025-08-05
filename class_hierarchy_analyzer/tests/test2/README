@@ -1,0 +1,23 @@
+# Test 2
+
+Run in class_hierarchy_analyzer folder
+Inheriting from another file (multiple occurrences) and inheriting from same file
+
+$ python3 cha.py tests/test2/animal.py -c Animal
+Animal (animal.py)
+
+$ python3 cha.py tests/test2/wild.py -c Animal 
+Animal (wild.py)
+
+$ python3 cha.py tests/test2/wild.py -c Feline
+Feline (wild.py)
+└── Animal (wild.py)
+
+$ python3 cha.py tests/test2/pet.py -c Dog
+Dog (pet.py)
+└── Animal (wild.py)
+
+$ python3 cha.py tests/test2/pet.py -c Cat
+Cat (pet.py)
+└── Feline (wild.py)
+    └── Animal (wild.py)

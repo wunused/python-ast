@@ -1,0 +1,31 @@
+# Test 1
+
+Run in class_hierarchy_analyzer folder
+
+$ python3 cha.py tests/test1/lib.py -c C
+C (lib.py)
+
+$ python3 cha.py tests/test1/lib.py -c D
+D (lib.py)
+
+$ python3 cha.py tests/test1/newApp.py -c pinho
+pinho (newApp.py)
+├── D (lib.py)
+└── C (lib.py)
+
+$ python3 cha.py tests/test1/app.py -c A
+A (app.py)
+└── C (lib.py)
+
+$ python3 cha.py tests/test1/app.py -c B
+B (app.py)
+└── pinho (newApp.py)
+    ├── D (lib.py)
+    └── C (lib.py)
+
+$ python3 cha.py tests/test1/app.py -c new
+new (app.py)
+└── B (app.py)
+    └── pinho (newApp.py)
+        ├── D (lib.py)
+        └── C (lib.py)

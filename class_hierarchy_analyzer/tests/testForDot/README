@@ -1,0 +1,14 @@
+# testForDot
+
+Run in class_hierarchy_analyzer folder
+
+This test is to check if a "from . import x" statement is correctly handled
+
+The analyzer should recognize that . refers to the same directory it is and grab the module x to be analyzed. We know it has passed the test if something in x is inherited and in the output, that thing is in a branch with x.py as the filename next to it
+
+$ python3 cha.py tests/testForDot/app2.py -c someClass2
+someClass2 (app2.py)
+
+$ python3 cha.py tests/testForDot/app.py -c someClass
+someClass (app.py)
+└── someClass2 (app2.py)

@@ -1,0 +1,25 @@
+#Other Docstring Parser Cases
+
+Run in docstring_parser folder
+
+* Since there are no annotations specifying on type, any of the options for the docstring format work
+$ python3 dsp.py tests/other_cases/noannotations.py [choose any of the options]
+def foo():
+    """A multi-line
+    docstring.
+    """
+
+def bar():
+    """
+    A multi-line
+    docstring.
+    """
+
+* Since there are no annotations specifying on type, any of the options for the docstring format work
+$ python3 dsp.py tests/other_cases/oneline.py [choose any of the options]
+def kos_root():
+    """Return the pathname of the KOS root directory."""
+    global _kos_root
+    if _kos_root:
+        return _kos_root
+    ...

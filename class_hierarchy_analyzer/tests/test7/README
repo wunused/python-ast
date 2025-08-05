@@ -1,0 +1,22 @@
+# Test 7
+
+Run in class_hierarchy_analyzer folder
+Two parent classes have same parent
+
+$ python3 cha.py tests/test7/latin.py -c latin
+latin (latin.py)
+
+$ python3 cha.py tests/test7/french.py -c french
+french (french.py)
+└── latin (latin.py)
+
+$ python3 cha.py tests/test7/italian.py -c italian
+italian (italian.py)
+└── latin (latin.py)
+
+$ python3 cha.py tests/test7/english.py -c english
+english (english.py)
+├── french (french.py)
+│   └── latin (latin.py)
+└── italian (italian.py)
+    └── latin (latin.py)

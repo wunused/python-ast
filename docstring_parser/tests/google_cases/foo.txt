@@ -1,0 +1,13 @@
+class Foo:
+
+    def foo(a: int, b: str, c: bool) -> bool:
+        """
+        Args:
+          a (int): ...
+          b (str): ...
+          c (bool): ...
+
+        Returns:
+          bool: True if successful, False otherwise.
+        """
+        pass
