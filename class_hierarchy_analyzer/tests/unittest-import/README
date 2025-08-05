@@ -1,5 +1,7 @@
 # unittest test case
 
+Run in class_hierarchy_analyzer folder
+
 Imports unittest.TestCase
 Test unittest-import/test_age.py for installed package inheritance case
 
@@ -8,7 +10,7 @@ Output:
     Recognize that the TestCategorizeByAge class inerits the unittest.TestCase
     methods.
 
-$ python3 analyzer/analyzer.py tests/unittest-import/test_age.py -c TestCategorizeByAge
+$ python3 cha.py tests/unittest-import/test_age.py -c TestCategorizeByAge
 TestCategorizeByAge (test_age.py)
 └── TestCase (case.py)
     └── object (builtins)
