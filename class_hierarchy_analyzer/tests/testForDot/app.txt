@@ -1,0 +1,3 @@
+someClass (app.py)
+└── someClass2 (app2.py)
+

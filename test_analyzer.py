@@ -33,6 +33,8 @@ import subprocess
     ("Question", "class_hierarchy_analyzer/tests/django-import/djangotutorial/polls/models.py", "class_hierarchy_analyzer/tests/django-import/djangoQuestion.txt"),
     ("Choice", "class_hierarchy_analyzer/tests/django-import/djangotutorial/polls/models.py", "class_hierarchy_analyzer/tests/django-import/djangoChoice.txt"),
     ("TestCategorizeByAge", "class_hierarchy_analyzer/tests/unittest-import/test_age.py", "class_hierarchy_analyzer/tests/unittest-import/testcategorize.txt"),
+    ("someClass", "class_hierarchy_analyzer/tests/testForDot/app.py", "class_hierarchy_analyzer/tests/testForDot/app.txt"),
+    ("someClass2", "class_hierarchy_analyzer/tests/testForDot/app2.py", "class_hierarchy_analyzer/tests/testForDot/app2.txt"),
 ]) 
 
 
