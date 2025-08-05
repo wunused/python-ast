@@ -1,0 +1,15 @@
+# Test 4
+
+Checks that inheritance in single file works 
+
+$ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Animal
+Animal (hierarchy.py)
+
+$ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Mammal
+Mammal (hierarchy.py)
+└── Animal (hierarchy.py)
+
+$ python3 analyzer/analyzer.py tests/test4/hierarchy.py -c Human
+Human (hierarchy.py)
+└── Mammal (hierarchy.py)
+    └── Animal (hierarchy.py)
