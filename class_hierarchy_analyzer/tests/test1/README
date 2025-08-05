@@ -1,29 +1,29 @@
 # Test 1
 
-TODO: Describe what the expected output of the analyzer when run on this test.
+Run in class_hierarchy_analyzer folder
 
-$ python3 analyzer/analyzer.py tests/test1/lib.py -c C
+$ python3 cha.py tests/test1/lib.py -c C
 C (lib.py)
 
-$ python3 analyzer/analyzer.py tests/test1/lib.py -c D
+$ python3 cha.py tests/test1/lib.py -c D
 D (lib.py)
 
-$ python3 analyzer/analyzer.py tests/test1/newApp.py -c pinho
+$ python3 cha.py tests/test1/newApp.py -c pinho
 pinho (newApp.py)
 ├── D (lib.py)
 └── C (lib.py)
 
-$ python3 analyzer/analyzer.py tests/test1/app.py -c A
+$ python3 cha.py tests/test1/app.py -c A
 A (app.py)
 └── C (lib.py)
 
-$ python3 analyzer/analyzer.py tests/test1/app.py -c B
+$ python3 cha.py tests/test1/app.py -c B
 B (app.py)
 └── pinho (newApp.py)
     ├── D (lib.py)
     └── C (lib.py)
 
-$ python3 analyzer/analyzer.py tests/test1/app.py -c new
+$ python3 cha.py tests/test1/app.py -c new
 new (app.py)
 └── B (app.py)
     └── pinho (newApp.py)
