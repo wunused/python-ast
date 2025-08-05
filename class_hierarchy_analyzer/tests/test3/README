@@ -1,20 +1,21 @@
 # Test 3
 
+Run in class_hierarchy_analyzer folder
 Generically testing if multiple inheritances affects performance
 
-$ python3 analyzer/analyzer.py tests/test3/a.py -c A
+$ python3 cha.py tests/test3/a.py -c A
 A (a.py)
 
-$ python3 analyzer/analyzer.py tests/test3/b.py -c B
+$ python3 cha.py tests/test3/b.py -c B
 B (b.py)
 └── A (a.py)
 
-$ python3 analyzer/analyzer.py tests/test3/c.py -c C
+$ python3 cha.py tests/test3/c.py -c C
 C (c.py)
 └── B (b.py)
     └── A (a.py)
 
-$ python3 analyzer/analyzer.py tests/test3/d.py -c D
+$ python3 cha.py tests/test3/d.py -c D
 D (d.py)
 └── C (c.py)
     └── B (b.py)
