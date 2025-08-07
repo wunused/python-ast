@@ -1,4 +1,5 @@
 import ast
+import docstring_parser
 import sys
 
 def google(doc):
@@ -11,30 +12,13 @@ def google(doc):
     Returns:
         array: an array where the first value is a dictionary of the function's arguments and the second value is the return type specified in the docstring
     """
+    parsed = docstring_parser.parse(doc, style=docstring_parser.DocstringStyle.GOOGLE)
+
     tup = []
-    dictionary = {}
-    args = False
-    returns = False
-    parts = doc.strip().split(":")
-    for part in parts:
-        part = part.strip()
-        if "Args" in part:
-            args = True
-        elif "Returns" in part:
-            args = False
-            returns = True
-        elif args:
-            param = part.strip().split(" ")
-            length = len(param)
-            key = param[length-2]
-            valwithparens = param[length-1]
-            lengthval = len(valwithparens)
-            val = valwithparens[1:lengthval-1]
-            dictionary[key] = val
-        elif returns:
-            tup.append(dictionary)
-            tup.append(part)
-            returns = False
+    dictionary = {param.arg_name: param.type_name for param in parsed.params}
+    return_type = parsed.returns.type_name if parsed.returns else None
+    tup.append(dictionary)
+    tup.append(return_type)
     return tup
 
 def sphinx(doc):
@@ -47,19 +31,12 @@ def sphinx(doc):
     Returns:
         array: an array where the first value is a dictionary of the function's arguments and the second value is the return type specified in the docstring
     """
+    parsed = docstring_parser.parse(doc, style=docstring_parser.DocstringStyle.REST)
     tup = []
-    dictionary = {}
-    parts = doc.strip().splitlines()
-    for part in parts:
-        part = part.strip()
-        if ":type" in part:
-            param = part.split(" ")
-            key = param[1][:len(param[1]) - 1]
-            dictionary[key] = param[2]
-        elif ":rtype:" in part:
-            param = part.split(" ")
-            tup.append(dictionary)
-            tup.append(param[1])
+    dictionary = {param.arg_name: param.type_name for param in parsed.params}
+    return_type = parsed.returns.type_name if parsed.returns else None
+    tup.append(dictionary)
+    tup.append(return_type)
     return tup
 
 def numpy(doc):
@@ -72,23 +49,12 @@ def numpy(doc):
     Returns:
         array: an array where the first value is a dictionary of the function's arguments and the second value is the return type specified in the docstring
     """
+    parsed = docstring_parser.parse(doc, style=docstring_parser.DocstringStyle.NUMPY)
     tup = []
-    dictionary = {}
-    returns = False
-    parts = doc.strip().splitlines()
-    for part in parts:
-        part = part.strip()
-        if ":" in part:
-            param = part.split(" ")
-            dictionary[param[0]] = param[2]
-        elif "Returns" in part:
-            returns = True
-        elif returns:
-            if "-" in part:
-                continue
-            tup.append(dictionary)
-            tup.append(part)
-            returns = False
+    dictionary = {param.arg_name: param.type_name for param in parsed.params}
+    return_type = parsed.returns.type_name if parsed.returns else None
+    tup.append(dictionary)
+    tup.append(return_type)
     return tup
 
 def epytext(doc):

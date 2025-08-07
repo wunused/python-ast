@@ -1,4 +1,5 @@
 anytree
+docstring_parser
 pytest
 beautifulsoup4
 lxml
