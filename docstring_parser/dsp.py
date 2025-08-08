@@ -49,13 +49,31 @@ def numpy(doc):
     Returns:
         array: an array where the first value is a dictionary of the function's arguments and the second value is the return type specified in the docstring
     """
-    parsed = docstring_parser.parse(doc, style=docstring_parser.DocstringStyle.NUMPY)
     tup = []
-    dictionary = {param.arg_name: param.type_name for param in parsed.params}
-    return_type = parsed.returns.type_name if parsed.returns else None
-    tup.append(dictionary)
-    tup.append(return_type)
+    dictionary = {}
+    returns = False
+    parts = doc.strip().splitlines()
+    for part in parts:
+        part = part.strip()
+        if ":" in part:
+            param = part.split(" ")
+            dictionary[param[0]] = param[2]
+        elif "Returns" in part:
+            returns = True
+        elif returns:
+            if "-" in part:
+                continue
+            tup.append(dictionary)
+            tup.append(part)
+            returns = False
     return tup
+#    parsed = docstring_parser.parse(doc, style=docstring_parser.DocstringStyle.NUMPY)
+#    tup = []
+#    dictionary = {param.arg_name: param.type_name for param in parsed.params}
+#    return_type = parsed.returns.type_name if parsed.returns else None
+#    tup.append(dictionary)
+#    tup.append(return_type)
+#    return tup
 
 def epytext(doc):
     """
